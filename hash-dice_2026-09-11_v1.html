@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Hashtag Wordle Prototype</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<style>
+  :root {
+    --cell-size: 56px;
+    --gap: 8px;
+    --bg: #f5f5f5;
+    --cell-bg: #fafafa;
+    --cell-border: #cccccc;
+    --prefilled-bg: #e0e0e0;
+    --disabled-bg: #000000;
+    --die-bg: #ffffff;
+    --die-border: #333333;
+    --die-selected: #4a90e2;
+    --text: #222222;
+  }
+  body {
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    margin: 0;
+    padding: 16px;
+  }
+  h1 {
+    font-size: 20px;
+    margin: 0 0 12px 0;
+    text-align: center;
+  }
+  .controls {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+  }
+  .controls label {
+    font-size: 14px;
+  }
+  .faces-select {
+    display: flex;
+    gap: 4px;
+  }
+  .faces-select button {
+    border: 1px solid #999;
+    background: #fff;
+    padding: 4px 8px;
+    font-size: 13px;
+    cursor: pointer;
+    border-radius: 4px;
+  }
+  .faces-select button.active {
+    background: #333;
+    color: #fff;
+    border-color: #333;
+  }
+  .game-container {
+    max-width: 500px;
+    margin: 0 auto;
+  }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(5, var(--cell-size));
+    grid-template-rows: repeat(5, var(--cell-size));
+    gap: var(--gap);
+    justify-content: center;
+    margin-bottom: 20px;
+  }
+  .cell {
+    width: var(--cell-size);
+    height: var(--cell-size);
+    background: var(--cell-bg);
+    border: 1px solid var(--cell-border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    font-weight: bold;
+    position: relative;
+    border-radius: 6px;
+    user-select: none;
+  }
+  .cell.prefilled {
+    background: var(--prefilled-bg);
+  }
+  .cell.empty {
+    cursor: pointer;
+  }
+  .cell.disabled {
+    background: var(--disabled-bg);
+    border-color: #000;
+    cursor: default;
+  }
+  .dice-panel {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    justify-content: center;
+    margin-bottom: 16px;
+    min-height: 60px;
+    padding: 8px;
+    background: #eee;
+    border-radius: 8px;
+  }
+  .die {
+    width: 56px;
+    height: 56px;
+    background: var(--die-bg);
+    border: 2px solid var(--die-border);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    font-weight: bold;
+    cursor: pointer;
+    position: relative;
+    user-select: none;
+  }
+  .die.selected {
+    border-color: var(--die-selected);
+    box-shadow: 0 0 0 2px rgba(74,144,226,0.4);
+  }
+  .actions {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+  .actions button {
+    padding: 8px 16px;
+    font-size: 14px;
+    border: 1px solid #999;
+    background: #fff;
+    border-radius: 6px;
+    cursor: pointer;
+  }
+  .actions button.primary {
+    background: #333;
+    color: #fff;
+    border-color: #333;
+  }
+  .feedback {
+    max-width: 500px;
+    margin: 0 auto;
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 12px;
+    font-size: 14px;
+  }
+  .feedback-item {
+    margin: 6px 0;
+  }
+  .feedback-item.correct {
+    color: #2e7d32;
+    font-weight: bold;
+  }
+  .feedback-item.valid {
+    color: #f57c00;
+  }
+  .feedback-item.invalid {
+    color: #c62828;
+  }
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.5);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+  }
+  .modal {
+    background: #fff;
+    border-radius: 8px;
+    padding: 16px;
+    max-width: 90vw;
+    width: 260px;
+  }
+  .modal h3 {
+    margin: 0 0 12px 0;
+    font-size: 16px;
+    text-align: center;
+  }
+  .modal-faces {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+  }
+  .modal-face-btn {
+    background: #f5f5f5;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    padding: 10px;
+    font-size: 18px;
+    font-weight: bold;
+    cursor: pointer;
+  }
+  .modal-face-btn:hover {
+    background: #e0e0e0;
+  }
+  .modal-close {
+    margin-top: 12px;
+    text-align: center;
+  }
+  .modal-close button {
+    padding: 6px 12px;
+    font-size: 13px;
+    border: 1px solid #999;
+    background: #fff;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+  .panel-label {
+    width: 100%;
+    text-align: center;
+    font-size: 13px;
+    color: #555;
+    margin-bottom: 4px;
+  }
+</style>
+</head>
+<body>
+<h1>Hashtag Wordle Prototype</h1>
+
+<div class="controls">
+  <label for="faces">Faces per die:</label>
+  <div class="faces-select" id="facesSelect"></div>
+</div>
+
+<div class="game-container">
+  <div class="grid" id="grid"></div>
+  <div class="panel-label">Dice tray (tap to select/move, tap again to cycle face, long‑press to pick face)</div>
+  <div class="dice-panel" id="dicePanel"></div>
+  <div class="actions">
+    <button id="checkBtn" class="primary">Check</button>
+    <button id="resetBtn">Reset</button>
+  </div>
+  <div class="feedback" id="feedback"></div>
+</div>
+
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <h3>Select face</h3>
+    <div class="modal-faces" id="modalFaces"></div>
+    <div class="modal-close">
+      <button id="modalClose">Close</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const solutionLetters = ['P','Y','O','B','N','O','B','E','E'];
+const baseDice = [
+  ['P','B','D','F','H','K'],
+  ['Y','C','D','G','H','W'],
+  ['O','C','I','M','U','V'],
+  ['B','C','D','F','M','V'],
+  ['N','C','D','M','Q','Z'],
+  ['O','E','G','H','K','W'],
+  ['B','C','H','J','M','V'],
+  ['E','D','G','H','O','W'],
+  ['E','C','F','H','O','W']
+];
+
+const diceFaces = [];
+const solutionIndex = [];
+baseDice.forEach((faces, idx) => {
+  const sorted = [...faces].sort();
+  diceFaces.push(sorted);
+  solutionIndex.push(sorted.indexOf(solutionLetters[idx]));
+});
+
+const puzzle = {
+  prefilled: [
+    {r:1,c:2,ch:'S'},
+    {r:1,c:4,ch:'T'},
+    {r:2,c:1,ch:'S'},
+    {r:2,c:3,ch:'R'},
+    {r:2,c:4,ch:'A'},
+    {r:4,c:4,ch:'L'},
+    {r:5,c:2,ch:'L'}
+  ],
+  solution: { H1:'SPRAY', H2:'NOBLE', V1:'SPOOL', V2:'TABLE' }
+};
+
+const wordList = new Set([
+  'SPRAY','NOBLE','SPOOL','TABLE',
+  'COOLY','DOILY','COYLY','CHOLE','DIGLY','DOYLY','COYLE','DIPLO','DUNLY','DOWLY',
+  'CYCLE','EDILE','DOOLY','DIMLY','DWILE','BUILD','DOWLE','COULD','CHELX'
+]);
+
+let facesPerDie = 6;
+let diceState = []; // { location, cellIndex, faceIndex }
+let selectedDieIndex = null;
+let dieOrder = [];
+
+function shuffle(array) {
+  for (let i = array.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [array[i], array[j]] = [array[j], array[i]];
+  }
+}
+
+function getVisibleFaceIndices(dieIdx) {
+  const N = facesPerDie;
+  const solIdx = solutionIndex[dieIdx];
+  if (solIdx < N) return Array.from({length:N}, (_,i)=>i);
+  const indices = Array.from({length:N-1}, (_,i)=>i);
+  indices.push(solIdx);
+  return indices;
+}
+
+const emptyCells = [
+  {r:2,c:2},{r:2,c:5},{r:3,c:2},{r:3,c:4},
+  {r:4,c:1},{r:4,c:2},{r:4,c:3},{r:4,c:5},{r:5,c:4}
+];
+const emptyCellMap = {};
+emptyCells.forEach((cell, idx) => { emptyCellMap[`${cell.r},${cell.c}`] = idx; });
+
+const prefilledMap = {};
+puzzle.prefilled.forEach(p => { prefilledMap[`${p.r},${p.c}`] = p.ch; });
+
+const gridEl = document.getElementById('grid');
+const dicePanelEl = document.getElementById('dicePanel');
+const facesSelectEl = document.getElementById('facesSelect');
+const checkBtn = document.getElementById('checkBtn');
+const resetBtn = document.getElementById('resetBtn');
+const feedbackEl = document.getElementById('feedback');
+const modalOverlay = document.getElementById('modalOverlay');
+const modalFaces = document.getElementById('modalFaces');
+const modalClose = document.getElementById('modalClose');
+
+function initFacesSelector() {
+  facesSelectEl.innerHTML = '';
+  for (let n = 1; n <= 6; n++) {
+    const btn = document.createElement('button');
+    btn.textContent = n;
+    if (n === facesPerDie) btn.classList.add('active');
+    btn.addEventListener('click', () => {
+      facesPerDie = n;
+      updateFacesSelector();
+      resetPuzzle();
+    });
+    facesSelectEl.appendChild(btn);
+  }
+}
+function updateFacesSelector() {
+  Array.from(facesSelectEl.children).forEach((btn, i) => {
+    btn.classList.toggle('active', i+1 === facesPerDie);
+  });
+}
+
+function initDiceState() {
+  diceState = diceFaces.map((_, idx) => ({ location:'tray', cellIndex:null, faceIndex:0 }));
+  dieOrder = Array.from({length:9}, (_,i)=>i);
+  shuffle(dieOrder);
+  selectedDieIndex = null;
+}
+
+function getActualFaceIndex(dieIdx, visibleIndex) {
+  return getVisibleFaceIndices(dieIdx)[visibleIndex];
+}
+
+function renderGrid() {
+  gridEl.innerHTML = '';
+  const cellToDie = {};
+  diceState.forEach((ds, idx) => {
+    if (ds.location === 'grid' && ds.cellIndex !== null) cellToDie[ds.cellIndex] = idx;
+  });
+  for (let r = 1; r <= 5; r++) {
+    for (let c = 1; c <= 5; c++) {
+      const key = `${r},${c}`;
+      const cell = document.createElement('div');
+      cell.className = 'cell';
+      if (prefilledMap[key]) {
+        cell.classList.add('prefilled');
+        cell.textContent = prefilledMap[key];
+      } else if (emptyCellMap[key] !== undefined) {
+        cell.classList.add('empty');
+        const cellIndex = emptyCellMap[key];
+        const dieIndex = cellToDie[cellIndex];
+        if (dieIndex !== undefined) {
+          // Create a die element inside the cell
+          const ds = diceState[dieIndex];
+          const actualIdx = getActualFaceIndex(dieIndex, ds.faceIndex);
+          const letter = diceFaces[dieIndex][actualIdx];
+          const dieEl = document.createElement('div');
+          dieEl.className = 'die';
+          if (selectedDieIndex === dieIndex) dieEl.classList.add('selected');
+          dieEl.textContent = letter;
+          // Click on die: select or cycle
+          dieEl.addEventListener('click', (e) => {
+            e.stopPropagation();
+            onDieClick(dieIndex);
+          });
+          dieEl.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+            openFaceModal(dieIndex);
+          });
+          let pressTimer;
+          dieEl.addEventListener('mousedown', () => {
+            pressTimer = setTimeout(() => openFaceModal(dieIndex), 600);
+          });
+          dieEl.addEventListener('mouseup', () => clearTimeout(pressTimer));
+          dieEl.addEventListener('mouseleave', () => clearTimeout(pressTimer));
+          cell.appendChild(dieEl);
+        }
+        // Click on empty cell (no die) moves selected die here
+        cell.addEventListener('click', (e) => {
+          e.stopPropagation();
+          if (dieIndex === undefined) {
+            onEmptyCellClick(cellIndex);
+          }
+        });
+      } else {
+        cell.classList.add('disabled');
+      }
+      gridEl.appendChild(cell);
+    }
+  }
+}
+
+function renderDicePanel() {
+  dicePanelEl.innerHTML = '';
+  dieOrder.forEach(dieIdx => {
+    const ds = diceState[dieIdx];
+    if (ds.location === 'grid') return;
+    const dieEl = document.createElement('div');
+    dieEl.className = 'die';
+    if (selectedDieIndex === dieIdx) dieEl.classList.add('selected');
+    const actualIdx = getActualFaceIndex(dieIdx, ds.faceIndex);
+    dieEl.textContent = diceFaces[dieIdx][actualIdx];
+    dieEl.addEventListener('click', (e) => {
+      e.stopPropagation();
+      onDieClick(dieIdx);
+    });
+    dieEl.addEventListener('contextmenu', (e) => {
+      e.preventDefault();
+      openFaceModal(dieIdx);
+    });
+    let pressTimer;
+    dieEl.addEventListener('mousedown', () => {
+      pressTimer = setTimeout(() => openFaceModal(dieIdx), 600);
+    });
+    dieEl.addEventListener('mouseup', () => clearTimeout(pressTimer));
+    dieEl.addEventListener('mouseleave', () => clearTimeout(pressTimer));
+    dicePanelEl.appendChild(dieEl);
+  });
+}
+
+function onDieClick(dieIdx) {
+  if (selectedDieIndex === dieIdx) {
+    cycleDieFace(dieIdx);
+  } else {
+    selectedDieIndex = dieIdx;
+  }
+  renderGrid();
+  renderDicePanel();
+}
+
+function cycleDieFace(dieIdx) {
+  const ds = diceState[dieIdx];
+  const indices = getVisibleFaceIndices(dieIdx);
+  ds.faceIndex = (ds.faceIndex + 1) % indices.length;
+}
+
+function onEmptyCellClick(cellIndex) {
+  if (selectedDieIndex === null) return;
+  const movingDie = selectedDieIndex;
+  diceState[movingDie].location = 'grid';
+  diceState[movingDie].cellIndex = cellIndex;
+  selectedDieIndex = null;
+  renderGrid();
+  renderDicePanel();
+}
+
+dicePanelEl.addEventListener('click', (e) => {
+  if (e.target === dicePanelEl && selectedDieIndex !== null) {
+    diceState[selectedDieIndex].location = 'tray';
+    diceState[selectedDieIndex].cellIndex = null;
+    selectedDieIndex = null;
+    renderGrid();
+    renderDicePanel();
+  }
+});
+
+function openFaceModal(dieIndex) {
+  const indices = getVisibleFaceIndices(dieIndex);
+  modalFaces.innerHTML = '';
+  indices.forEach((actualIdx, i) => {
+    const ch = diceFaces[dieIndex][actualIdx];
+    const btn = document.createElement('button');
+    btn.className = 'modal-face-btn';
+    btn.textContent = ch;
+    btn.addEventListener('click', () => {
+      diceState[dieIndex].faceIndex = i;
+      modalOverlay.style.display = 'none';
+      renderGrid();
+      renderDicePanel();
+    });
+    modalFaces.appendChild(btn);
+  });
+  modalOverlay.style.display = 'flex';
+}
+
+modalClose.addEventListener('click', () => { modalOverlay.style.display = 'none'; });
+
+function getWordsFromGrid() {
+  const grid = {};
+  puzzle.prefilled.forEach(p => { grid[`${p.r},${p.c}`] = p.ch; });
+  diceState.forEach((ds, idx) => {
+    if (ds.location === 'grid' && ds.cellIndex !== null) {
+      const cell = emptyCells[ds.cellIndex];
+      const actualIdx = getActualFaceIndex(idx, ds.faceIndex);
+      grid[`${cell.r},${cell.c}`] = diceFaces[idx][actualIdx];
+    }
+  });
+  const h1 = [1,2,3,4,5].map(c => grid[`2,${c}`]||'?').join('');
+  const h2 = [1,2,3,4,5].map(c => grid[`4,${c}`]||'?').join('');
+  const v1 = [1,2,3,4,5].map(r => grid[`${r},2`]||'?').join('');
+  const v2 = [1,2,3,4,5].map(r => grid[`${r},4`]||'?').join('');
+  return {h1,h2,v1,v2};
+}
+
+function checkSolution() {
+  const {h1,h2,v1,v2} = getWordsFromGrid();
+  const sol = puzzle.solution;
+  const feedback = [];
+  function feedbackItem(label, word, intended) {
+    const valid = wordList.has(word);
+    const correct = word === intended;
+    let cls = 'invalid', text = `${label}: "${word}" – invalid`;
+    if (valid) {
+      if (correct) { cls='correct'; text=`${label}: "${word}" – correct`; }
+      else { cls='valid'; text=`${label}: "${word}" – valid (alternate)`; }
+    }
+    return {cls,text};
+  }
+  feedback.push(feedbackItem('Across 1', h1, sol.H1));
+  feedback.push(feedbackItem('Across 2', h2, sol.H2));
+  feedback.push(feedbackItem('Down 1', v1, sol.V1));
+  feedback.push(feedbackItem('Down 2', v2, sol.V2));
+  feedbackEl.innerHTML = '';
+  feedback.forEach(f => {
+    const div = document.createElement('div');
+    div.className = `feedback-item ${f.cls}`;
+    div.textContent = f.text;
+    feedbackEl.appendChild(div);
+  });
+  const allCorrect = feedback.every(f=>f.cls==='correct');
+  if (allCorrect) {
+    const div = document.createElement('div');
+    div.style.marginTop='10px'; div.style.fontWeight='bold'; div.style.color='#2e7d32';
+    div.textContent='All words correct – you found the intended solution!';
+    feedbackEl.appendChild(div);
+  } else {
+    const allValid = feedback.every(f=>f.cls==='correct'||f.cls==='valid');
+    if (allValid) {
+      const div = document.createElement('div');
+      div.style.marginTop='10px'; div.style.fontWeight='bold'; div.style.color='#f57c00';
+      div.textContent='All words are valid, but not all match the intended solution. Keep adjusting!';
+      feedbackEl.appendChild(div);
+    }
+  }
+}
+
+function resetPuzzle() {
+  initDiceState();
+  feedbackEl.innerHTML='';
+  renderGrid();
+  renderDicePanel();
+}
+
+checkBtn.addEventListener('click', checkSolution);
+resetBtn.addEventListener('click', resetPuzzle);
+
+initFacesSelector();
+initDiceState();
+renderGrid();
+renderDicePanel();
+</script>
+</body>
+</html>
