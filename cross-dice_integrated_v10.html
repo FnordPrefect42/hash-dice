@@ -1,0 +1,1300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Cross Dice</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+<style>
+  :root {
+    --cell-size: 56px;
+    --gap: 8px;
+    --bg: #f5f5f5;
+    --cell-bg: #fafafa;
+    --cell-border: #cccccc;
+    --prefilled-bg: #e0e0e0;
+    --die-bg: #ffffff;
+    --die-border: #333333;
+    --die-selected: #4a90e2;
+    --text: #222222;
+    --disabled-text: #999999;
+    --save-indicator: #2e7d32;
+  }
+  body {
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    margin: 0;
+    padding: 16px;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+
+  /* === SPLASH PAGE STYLES === */
+  .splash-container {
+    max-width: 500px;
+    margin: 0 auto;
+  }
+  .splash-header {
+    text-align: center;
+    margin-bottom: 24px;
+  }
+  .splash-header h1 {
+    font-size: 28px;
+    margin: 0 0 12px 0;
+  }
+  .splash-card {
+    background: #ffffff;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  }
+  .splash-card p {
+    margin: 0 0 12px 0;
+    font-size: 16px;
+    line-height: 1.5;
+  }
+  .sample-grid {
+    display: flex;
+    gap: var(--gap);
+    justify-content: center;
+    margin: 16px 0;
+  }
+  .cell {
+    width: var(--cell-size);
+    height: var(--cell-size);
+    background: var(--cell-bg);
+    border: 1px solid var(--cell-border);
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    font-weight: bold;
+    position: relative;
+    user-select: none;
+  }
+  .cell.prefilled {
+    background: var(--prefilled-bg);
+  }
+  .cell.empty {
+    cursor: pointer;
+  }
+  .dice-panel {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    margin-bottom: 16px;
+    min-height: 60px;
+    padding: 8px;
+    background: #eee;
+    border-radius: 8px;
+    cursor: pointer;
+  }
+  .die {
+    width: var(--cell-size);
+    height: var(--cell-size);
+    background: var(--die-bg);
+    border: 2px solid var(--die-border);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    font-weight: bold;
+    cursor: pointer;
+    position: relative;
+    user-select: none;
+    -webkit-touch-callout: none;
+    transition: transform 0.1s;
+  }
+  .die.selected {
+    border-color: var(--die-selected);
+    box-shadow: 0 0 0 2px rgba(74,144,226,0.4);
+  }
+  .die.long-pressing {
+    transform: scale(0.95);
+  }
+  .difficulty-buttons {
+    display: flex;
+    gap: 6px;
+    overflow-x: auto;
+    padding-bottom: 8px;
+    margin: 12px 0;
+  }
+  .difficulty-buttons button {
+    flex: 0 0 auto;
+    border: 1px solid #999;
+    background: #fff;
+    padding: 8px 12px;
+    font-size: 13px;
+    cursor: pointer;
+    border-radius: 6px;
+    white-space: nowrap;
+  }
+  .difficulty-buttons button.active {
+    background: var(--die-selected);
+    color: #fff;
+    border-color: var(--die-selected);
+  }
+  .faces-info {
+    text-align: center;
+    font-size: 14px;
+    color: #666666;
+    min-height: 20px;
+    margin: 12px 0;
+  }
+  .splash-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    margin-top: 16px;
+  }
+  .splash-actions button {
+    padding: 12px 24px;
+    font-size: 16px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+  }
+  .splash-actions button.primary {
+    background: var(--die-selected);
+    color: #fff;
+  }
+  .splash-actions button.primary:hover {
+    background: #357abd;
+  }
+  .splash-actions button.secondary {
+    background: #fff;
+    color: var(--text);
+    border: 1px solid #999;
+  }
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.5);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+  }
+  .modal {
+    background: #fff;
+    border-radius: 8px;
+    padding: 16px;
+    max-width: 90vw;
+    width: 260px;
+  }
+  .modal h3 {
+    margin: 0 0 12px 0;
+    font-size: 16px;
+    text-align: center;
+  }
+  .modal-faces {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+  }
+  .modal-face-btn {
+    background: #f5f5f5;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    padding: 10px;
+    font-size: 18px;
+    font-weight: bold;
+    cursor: pointer;
+  }
+  .modal-face-btn:active {
+    background: #e0e0e0;
+  }
+  .modal-close {
+    margin-top: 12px;
+    text-align: center;
+  }
+  .modal-close button {
+    padding: 6px 12px;
+    font-size: 13px;
+    border: 1px solid #999;
+    background: #fff;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+  .panel-label {
+    width: 100%;
+    text-align: center;
+    font-size: 13px;
+    color: #555;
+    margin-bottom: 4px;
+  }
+
+  /* === CORE GAME STYLES === */
+  .game-container {
+    max-width: 500px;
+    margin: 0 auto;
+  }
+  .controls {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+  }
+  .controls label {
+    font-size: 14px;
+  }
+  .faces-select {
+    display: flex;
+    gap: 4px;
+  }
+  .faces-select button {
+    border: 1px solid #999;
+    background: #fff;
+    padding: 4px 8px;
+    font-size: 13px;
+    cursor: pointer;
+    border-radius: 4px;
+  }
+  .faces-select button.active {
+    background: #333;
+    color: #fff;
+    border-color: #333;
+  }
+  .faces-select button.disabled {
+    background: #ddd;
+    color: var(--disabled-text);
+    border-color: #ccc;
+    cursor: not-allowed;
+  }
+  .faces-select button.disabled.active {
+    background: #bbb;
+    color: #666;
+    border-color: #999;
+  }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(5, var(--cell-size));
+    grid-template-rows: repeat(5, var(--cell-size));
+    gap: var(--gap);
+    justify-content: center;
+    margin-bottom: 20px;
+  }
+  .game-dice-panel {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    justify-content: center;
+    margin-bottom: 16px;
+    min-height: 60px;
+    padding: 8px;
+    background: #eee;
+    border-radius: 8px;
+  }
+  .actions {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+  .actions button {
+    padding: 8px 16px;
+    font-size: 14px;
+    border: 1px solid #999;
+    background: #fff;
+    border-radius: 6px;
+    cursor: pointer;
+  }
+  .actions button.primary {
+    background: #333;
+    color: #fff;
+    border-color: #333;
+  }
+  .feedback {
+    max-width: 500px;
+    margin: 0 auto;
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 12px;
+    font-size: 14px;
+  }
+  .feedback-item {
+    margin: 6px 0;
+  }
+  .feedback-item.correct {
+    color: #2e7d32;
+    font-weight: bold;
+  }
+  .feedback-item.valid {
+    color: #f57c00;
+  }
+  .feedback-item.invalid {
+    color: #c62828;
+  }
+  .save-indicator {
+    text-align: center;
+    font-size: 12px;
+    color: var(--save-indicator);
+    margin-top: 8px;
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+  .save-indicator.visible {
+    opacity: 1;
+  }
+
+  /* === UTILITY CLASSES === */
+  .hidden {
+    display: none !important;
+  }
+</style>
+</head>
+<body>
+
+<!-- === SPLASH PAGE === -->
+<div id="splashPage" class="splash-container">
+  <div class="splash-header">
+    <h1>How to Play</h1>
+  </div>
+
+  <div class="splash-card">
+    <p>You will see a small crossword‑style grid.</p>
+    <div class="sample-grid" id="sampleGrid"></div>
+
+    <p>Fill in the blank squares using the dice in the tray below.</p>
+    <div class="panel-label">Dice tray (tap to select/move, tap again to cycle face, long‑press to pick face)</div>
+    <div class="dice-panel" id="dicePanel"></div>
+
+    <p>Choose your difficulty.</p>
+    <div class="difficulty-buttons" id="difficultyButtons"></div>
+    <p class="faces-info" id="facesInfo"></p>
+
+    <div class="splash-actions">
+      <button class="primary" id="startBtn">Start</button>
+      <button class="secondary" id="statsBtn">Stats</button>
+    </div>
+  </div>
+</div>
+
+<!-- === CORE GAME === -->
+<div id="gamePage" class="game-container hidden">
+  <h1 style="font-size: 20px; margin: 0 0 12px 0; text-align: center;">Cross Dice</h1>
+  
+  <div class="controls">
+    <label for="faces">Difficulty (can be lowered):</label>
+    <div class="faces-select" id="facesSelect"></div>
+  </div>
+
+  <div class="grid" id="grid"></div>
+
+  <div class="panel-label">Dice tray (tap to select/move, tap again to cycle face, long‑press to pick face)</div>
+  <div class="game-dice-panel" id="gameDicePanel"></div>
+
+  <div class="actions">
+    <button id="checkBtn" class="primary">Check</button>
+    <button id="resetBtn">Reset</button>
+  </div>
+
+  <div class="feedback" id="feedback"></div>
+  <div class="save-indicator" id="saveIndicator">✓ Game saved</div>
+</div>
+
+<!-- === FACE PICKER MODAL === -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <h3>Select face</h3>
+    <div class="modal-faces" id="modalFaces"></div>
+    <div class="modal-close">
+      <button id="modalClose">Close</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// === SHARED CONSTANTS ===
+const allFaces = ['B', 'D', 'P', 'Q', 'X', 'Y'];
+const solutionLetter = 'P';
+const solutionIndex = allFaces.indexOf(solutionLetter); // 2
+const LONGPRESSDELAY = 350;
+const SAVE_KEY = 'crossDiceSavedGame';
+
+// Difficulty names (matching splash page)
+const difficultyNames = {
+  1: 'Learning',
+  2: 'Easy',
+  3: 'Regular',
+  4: 'Hard',
+  5: 'Pro',
+  6: 'Extreme'
+};
+
+// === SPLASH PAGE STATE ===
+let splashFacesPerDie = 3;
+let splashDiceState = [];
+let splashSelectedDieIndex = null;
+let splashLongPressTimer = null;
+let splashCurrentDieForLongPress = null;
+
+// Splash grid configuration
+const splashEmptyCells = [{r:0,c:0}];
+const splashPrefilledCells = [
+  {r:0,c:1,ch:'L'},
+  {r:0,c:2,ch:'A'},
+  {r:0,c:3,ch:'Y'}
+];
+
+// === CORE GAME STATE ===
+const solutionLetters = ['P','Y','O','B','N','O','B','E','E'];
+const baseDice = [
+  ['P','B','D','F','H','K'],
+  ['Y','C','D','G','H','W'],
+  ['O','C','I','M','U','V'],
+  ['B','C','D','F','M','V'],
+  ['N','C','D','M','Q','Z'],
+  ['O','E','G','H','K','W'],
+  ['B','C','H','J','M','V'],
+  ['E','D','G','H','O','W'],
+  ['E','C','F','H','O','W']
+];
+const diceFaces = [];
+const solutionIndexMap = [];
+
+baseDice.forEach((faces, idx) => {
+  const sorted = [...faces].sort();
+  diceFaces.push(sorted);
+  solutionIndexMap.push(sorted.indexOf(solutionLetters[idx]));
+});
+
+const puzzle = {
+  prefilled: [
+    {r:1,c:2,ch:'S'}, {r:1,c:4,ch:'T'},
+    {r:2,c:1,ch:'S'}, {r:2,c:3,ch:'R'}, {r:2,c:4,ch:'A'},
+    {r:4,c:4,ch:'L'}, {r:5,c:2,ch:'L'}
+  ],
+  solution: {
+    H1: 'SPRAY',
+    H2: 'NOBLE',
+    V1: 'SPOOL',
+    V2: 'TABLE'
+  }
+};
+
+const wordList = new Set([
+  'SPRAY','NOBLE','SPOOL','TABLE',
+  'COOLY','DOILY','COYLY','CHOLE','DIGLY','DOYLY','COYLE','DIPLO','DUNLY','DOWLY',
+  'CYCLE','EDILE','DOOLY','DIMLY','DWILE','BUILD','DOWLE','COULD','CHELX'
+]);
+
+const emptyCells = [
+  {r:2,c:2},{r:2,c:5},{r:3,c:2},{r:3,c:4},
+  {r:4,c:1},{r:4,c:2},{r:4,c:3},{r:4,c:5},{r:5,c:4}
+];
+
+let facesPerDie = 6;
+let maxFacesPerDie = null; // Maximum difficulty allowed (locked on start, decreases if user downgrades)
+let diceState = [];
+let selectedDieIndex = null;
+let dieOrder = [];
+let longPressTimer = null;
+let currentDieForLongPress = null;
+
+// === DOM ELEMENTS ===
+// Splash
+const sampleGrid = document.getElementById('sampleGrid');
+const dicePanel = document.getElementById('dicePanel');
+const difficultyButtonsEl = document.getElementById('difficultyButtons');
+const facesInfoEl = document.getElementById('facesInfo');
+const startBtn = document.getElementById('startBtn');
+const statsBtn = document.getElementById('statsBtn');
+
+// Game
+const gridEl = document.getElementById('grid');
+const facesSelectEl = document.getElementById('facesSelect');
+const gameDicePanel = document.getElementById('gameDicePanel');
+const checkBtn = document.getElementById('checkBtn');
+const resetBtn = document.getElementById('resetBtn');
+const feedbackEl = document.getElementById('feedback');
+const saveIndicator = document.getElementById('saveIndicator');
+
+// Modal
+const modalOverlay = document.getElementById('modalOverlay');
+const modalFaces = document.getElementById('modalFaces');
+const modalClose = document.getElementById('modalClose');
+
+// === AUTO-SAVE FUNCTIONS ===
+
+// Get today's date in Eastern Time (YYYY-MM-DD format)
+function getEasternDate() {
+  const now = new Date();
+  // Convert to Eastern Time (UTC-5 or UTC-4 during DST)
+  const easternTime = new Date(now.toLocaleString('en-US', { timeZone: 'America/New_York' }));
+  const year = easternTime.getFullYear();
+  const month = String(easternTime.getMonth() + 1).padStart(2, '0');
+  const day = String(easternTime.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+function saveGame() {
+  const gameState = {
+    facesPerDie: facesPerDie,
+    maxFacesPerDie: maxFacesPerDie,
+    diceState: diceState,
+    dieOrder: dieOrder,
+    gameDate: getEasternDate(), // Store the date this game was played
+    timestamp: new Date().toISOString()
+  };
+  localStorage.setItem(SAVE_KEY, JSON.stringify(gameState));
+  showSaveIndicator();
+}
+
+function loadGame() {
+  const saved = localStorage.getItem(SAVE_KEY);
+  if (!saved) return false;
+  
+  try {
+    const gameState = JSON.parse(saved);
+    
+    // Check if save is from today (in Eastern Time)
+    const todayEastern = getEasternDate();
+    if (gameState.gameDate !== todayEastern) {
+      // Save is from a different day, expire it
+      localStorage.removeItem(SAVE_KEY);
+      return false;
+    }
+    
+    // Load the saved game
+    facesPerDie = gameState.facesPerDie || 6;
+    maxFacesPerDie = gameState.maxFacesPerDie || facesPerDie;
+    diceState = gameState.diceState || [];
+    dieOrder = gameState.dieOrder || [];
+    selectedDieIndex = null;
+    return true;
+  } catch (e) {
+    console.error('Failed to load saved game:', e);
+    localStorage.removeItem(SAVE_KEY);
+    return false;
+  }
+}
+
+function clearSavedGame() {
+  localStorage.removeItem(SAVE_KEY);
+}
+
+function showSaveIndicator() {
+  saveIndicator.classList.add('visible');
+  setTimeout(() => {
+    saveIndicator.classList.remove('visible');
+  }, 2000);
+}
+
+// === SPLASH PAGE FUNCTIONS ===
+
+function splashGetVisibleFaceIndices() {
+  const N = splashFacesPerDie;
+  const indices = [solutionIndex];
+  for (let i = 0; i < allFaces.length && indices.length < N; i++) {
+    if (i !== solutionIndex && !indices.includes(i)) {
+      indices.push(i);
+    }
+  }
+  indices.sort((a, b) => a - b);
+  return indices;
+}
+
+function splashInitDiceState() {
+  splashDiceState = [{
+    location: 'tray',
+    cellIndex: null,
+    faceIndex: 0
+  }];
+  splashSelectedDieIndex = null;
+}
+
+function splashGetActualFaceIndex(dieIdx, visibleIndex) {
+  const indices = splashGetVisibleFaceIndices();
+  return indices[visibleIndex];
+}
+
+function splashClearLongPress() {
+  if (splashLongPressTimer) {
+    clearTimeout(splashLongPressTimer);
+    splashLongPressTimer = null;
+    splashCurrentDieForLongPress = null;
+  }
+}
+
+function splashAttachDieHandlers(dieEl, dieIdx) {
+  dieEl.addEventListener('contextmenu', (e) => e.preventDefault());
+
+  dieEl.addEventListener('touchstart', (e) => {
+    e.stopPropagation();
+    e.preventDefault();
+    splashClearLongPress();
+    splashCurrentDieForLongPress = dieIdx;
+    dieEl.classList.add('long-pressing');
+    splashLongPressTimer = setTimeout(() => {
+      dieEl.classList.remove('long-pressing');
+      splashOpenFaceModal(dieIdx);
+      splashClearLongPress();
+    }, LONGPRESSDELAY);
+  }, { passive: false });
+
+  dieEl.addEventListener('touchend', (e) => {
+    e.stopPropagation();
+    e.preventDefault();
+    if (splashLongPressTimer && splashCurrentDieForLongPress === dieIdx) {
+      splashClearLongPress();
+      dieEl.classList.remove('long-pressing');
+      splashOnDieClick(dieIdx);
+    }
+  }, { passive: false });
+
+  dieEl.addEventListener('touchmove', (e) => {
+    e.stopPropagation();
+    e.preventDefault();
+    splashClearLongPress();
+    dieEl.classList.remove('long-pressing');
+  }, { passive: false });
+
+  dieEl.addEventListener('touchcancel', (e) => {
+    e.stopPropagation();
+    e.preventDefault();
+    splashClearLongPress();
+    dieEl.classList.remove('long-pressing');
+  }, { passive: false });
+
+  dieEl.addEventListener('mousedown', (e) => {
+    e.stopPropagation();
+    splashClearLongPress();
+    splashCurrentDieForLongPress = dieIdx;
+    dieEl.classList.add('long-pressing');
+    splashLongPressTimer = setTimeout(() => {
+      dieEl.classList.remove('long-pressing');
+      splashOpenFaceModal(dieIdx);
+      splashClearLongPress();
+    }, LONGPRESSDELAY);
+  });
+
+  dieEl.addEventListener('mouseup', (e) => {
+    e.stopPropagation();
+    if (splashLongPressTimer && splashCurrentDieForLongPress === dieIdx) {
+      splashClearLongPress();
+      dieEl.classList.remove('long-pressing');
+      splashOnDieClick(dieIdx);
+    }
+  });
+
+  dieEl.addEventListener('mouseleave', (e) => {
+    e.stopPropagation();
+    splashClearLongPress();
+    dieEl.classList.remove('long-pressing');
+  });
+}
+
+function splashRenderGrid() {
+  sampleGrid.innerHTML = '';
+  const cellToDie = {};
+  splashDiceState.forEach((ds, idx) => {
+    if (ds.location === 'grid' && ds.cellIndex !== null) {
+      cellToDie[ds.cellIndex] = idx;
+    }
+  });
+
+  for (let r = 0; r < 1; r++) {
+    for (let c = 0; c < 4; c++) {
+      const cell = document.createElement('div');
+      cell.className = 'cell';
+
+      const prefilled = splashPrefilledCells.find(p => p.r === r && p.c === c);
+      if (prefilled) {
+        cell.classList.add('prefilled');
+        cell.textContent = prefilled.ch;
+      } else if (splashEmptyCells.some(e => e.r === r && e.c === c)) {
+        cell.classList.add('empty');
+        const cellIndex = splashEmptyCells.findIndex(e => e.r === r && e.c === c);
+        const dieIndex = cellToDie[cellIndex];
+        if (dieIndex !== undefined) {
+          const ds = splashDiceState[dieIndex];
+          const actualIdx = splashGetActualFaceIndex(dieIndex, ds.faceIndex);
+          const letter = allFaces[actualIdx];
+          const dieEl = document.createElement('div');
+          dieEl.className = 'die';
+          if (splashSelectedDieIndex === dieIndex) {
+            dieEl.classList.add('selected');
+          }
+          dieEl.textContent = letter;
+          splashAttachDieHandlers(dieEl, dieIndex);
+          cell.appendChild(dieEl);
+        }
+        cell.addEventListener('click', (e) => {
+          e.stopPropagation();
+          splashOnEmptyCellClick(cellIndex);
+        });
+      }
+      sampleGrid.appendChild(cell);
+    }
+  }
+}
+
+function splashRenderDicePanel() {
+  dicePanel.innerHTML = '';
+  splashDiceState.forEach((ds, dieIdx) => {
+    if (ds.location === 'grid') return;
+    const dieEl = document.createElement('div');
+    dieEl.className = 'die';
+    if (splashSelectedDieIndex === dieIdx) {
+      dieEl.classList.add('selected');
+    }
+    const actualIdx = splashGetActualFaceIndex(dieIdx, ds.faceIndex);
+    dieEl.textContent = allFaces[actualIdx];
+    splashAttachDieHandlers(dieEl, dieIdx);
+    dicePanel.appendChild(dieEl);
+  });
+}
+
+function splashOnDieClick(dieIdx) {
+  if (splashSelectedDieIndex === dieIdx) {
+    splashCycleDieFace(dieIdx);
+  } else {
+    splashSelectedDieIndex = dieIdx;
+    splashRenderGrid();
+    splashRenderDicePanel();
+  }
+}
+
+function splashCycleDieFace(dieIdx) {
+  const ds = splashDiceState[dieIdx];
+  const indices = splashGetVisibleFaceIndices();
+  ds.faceIndex = (ds.faceIndex + 1) % indices.length;
+  splashRenderGrid();
+  splashRenderDicePanel();
+}
+
+function splashOnEmptyCellClick(cellIndex) {
+  if (splashSelectedDieIndex === null) return;
+  const movingDie = splashSelectedDieIndex;
+  splashDiceState[movingDie].location = 'grid';
+  splashDiceState[movingDie].cellIndex = cellIndex;
+  splashSelectedDieIndex = null;
+  splashRenderGrid();
+  splashRenderDicePanel();
+}
+
+dicePanel.addEventListener('click', (e) => {
+  if (e.target === dicePanel) {
+    const dieInGrid = splashDiceState.findIndex(ds => ds.location === 'grid');
+    if (dieInGrid !== -1 && splashSelectedDieIndex === dieInGrid) {
+      splashDiceState[dieInGrid].location = 'tray';
+      splashDiceState[dieInGrid].cellIndex = null;
+      splashSelectedDieIndex = null;
+      splashRenderGrid();
+      splashRenderDicePanel();
+    } else if (splashSelectedDieIndex !== null && splashDiceState[splashSelectedDieIndex].location === 'tray') {
+      splashSelectedDieIndex = null;
+      splashRenderGrid();
+      splashRenderDicePanel();
+    }
+  }
+});
+
+function splashOpenFaceModal(dieIndex) {
+  const indices = splashGetVisibleFaceIndices();
+  modalFaces.innerHTML = '';
+  indices.forEach((actualIdx, i) => {
+    const ch = allFaces[actualIdx];
+    const btn = document.createElement('button');
+    btn.className = 'modal-face-btn';
+    btn.textContent = ch;
+    btn.addEventListener('click', () => {
+      splashDiceState[dieIndex].faceIndex = i;
+      modalOverlay.style.display = 'none';
+      splashRenderGrid();
+      splashRenderDicePanel();
+    });
+    modalFaces.appendChild(btn);
+  });
+  modalOverlay.style.display = 'flex';
+}
+
+function splashRenderDifficultyButtons() {
+  const difficulties = [
+    { name: 'Learning', faces: 1 },
+    { name: 'Easy', faces: 2 },
+    { name: 'Regular', faces: 3 },
+    { name: 'Hard', faces: 4 },
+    { name: 'Pro', faces: 5 },
+    { name: 'Extreme', faces: 6 }
+  ];
+
+  difficultyButtonsEl.innerHTML = '';
+  difficulties.forEach((diff, idx) => {
+    const btn = document.createElement('button');
+    btn.textContent = diff.name;
+    if (idx === 2) btn.classList.add('active'); // Regular default
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.difficulty-buttons button').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      splashFacesPerDie = diff.faces;
+      facesInfoEl.textContent = `Each die has ${diff.faces} possible value${diff.faces === 1 ? '' : 's'}.`;
+      splashInitDiceState();
+      splashRenderGrid();
+      splashRenderDicePanel();
+    });
+    difficultyButtonsEl.appendChild(btn);
+  });
+
+  // Set default text
+  const defaultDiff = difficulties[2];
+  facesInfoEl.textContent = `Each die has ${defaultDiff.faces} possible value${defaultDiff.faces === 1 ? '' : 's'}.`;
+}
+
+// === CORE GAME FUNCTIONS ===
+
+function shuffle(array) {
+  for (let i = array.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [array[i], array[j]] = [array[j], array[i]];
+  }
+}
+
+function getVisibleFaceIndices(dieIdx) {
+  const N = facesPerDie;
+  const solIdx = solutionIndexMap[dieIdx];
+  if (solIdx < N) {
+    return Array.from({length: N}, (_, i) => i);
+  }
+  const indices = Array.from({length: N-1}, (_, i) => i);
+  indices.push(solIdx);
+  return indices;
+}
+
+function initDiceState() {
+  diceState = diceFaces.map((_, idx) => ({
+    location: 'tray',
+    cellIndex: null,
+    faceIndex: 0
+  }));
+  dieOrder = Array.from({length: 9}, (_, i) => i);
+  shuffle(dieOrder);
+  selectedDieIndex = null;
+}
+
+function getActualFaceIndex(dieIdx, visibleIndex) {
+  const indices = getVisibleFaceIndices(dieIdx);
+  return indices[visibleIndex];
+}
+
+function clearLongPress() {
+  if (longPressTimer) {
+    clearTimeout(longPressTimer);
+    longPressTimer = null;
+    currentDieForLongPress = null;
+  }
+}
+
+function attachDieHandlers(dieEl, dieIdx) {
+  dieEl.addEventListener('contextmenu', (e) => e.preventDefault());
+
+  dieEl.addEventListener('touchstart', (e) => {
+    e.stopPropagation();
+    e.preventDefault();
+    clearLongPress();
+    currentDieForLongPress = dieIdx;
+    dieEl.classList.add('long-pressing');
+    longPressTimer = setTimeout(() => {
+      dieEl.classList.remove('long-pressing');
+      openFaceModal(dieIdx);
+      clearLongPress();
+    }, LONGPRESSDELAY);
+  }, { passive: false });
+
+  dieEl.addEventListener('touchend', (e) => {
+    e.stopPropagation();
+    e.preventDefault();
+    if (longPressTimer && currentDieForLongPress === dieIdx) {
+      clearLongPress();
+      dieEl.classList.remove('long-pressing');
+      onDieClick(dieIdx);
+    }
+  }, { passive: false });
+
+  dieEl.addEventListener('touchmove', (e) => {
+    e.stopPropagation();
+    e.preventDefault();
+    clearLongPress();
+    dieEl.classList.remove('long-pressing');
+  }, { passive: false });
+
+  dieEl.addEventListener('touchcancel', (e) => {
+    e.stopPropagation();
+    e.preventDefault();
+    clearLongPress();
+    dieEl.classList.remove('long-pressing');
+  }, { passive: false });
+
+  dieEl.addEventListener('mousedown', (e) => {
+    e.stopPropagation();
+    clearLongPress();
+    currentDieForLongPress = dieIdx;
+    dieEl.classList.add('long-pressing');
+    longPressTimer = setTimeout(() => {
+      dieEl.classList.remove('long-pressing');
+      openFaceModal(dieIdx);
+      clearLongPress();
+    }, LONGPRESSDELAY);
+  });
+
+  dieEl.addEventListener('mouseup', (e) => {
+    e.stopPropagation();
+    if (longPressTimer && currentDieForLongPress === dieIdx) {
+      clearLongPress();
+      dieEl.classList.remove('long-pressing');
+      onDieClick(dieIdx);
+    }
+  });
+
+  dieEl.addEventListener('mouseleave', (e) => {
+    e.stopPropagation();
+    clearLongPress();
+    dieEl.classList.remove('long-pressing');
+  });
+}
+
+function renderGrid() {
+  gridEl.innerHTML = '';
+  const cellToDie = {};
+  diceState.forEach((ds, idx) => {
+    if (ds.location === 'grid' && ds.cellIndex !== null) {
+      cellToDie[ds.cellIndex] = idx;
+    }
+  });
+
+  const emptyCellMap = {};
+  emptyCells.forEach((cell, idx) => {
+    emptyCellMap[`${cell.r},${cell.c}`] = idx;
+  });
+
+  const prefilledMap = {};
+  puzzle.prefilled.forEach(p => {
+    prefilledMap[`${p.r},${p.c}`] = p.ch;
+  });
+
+  for (let r = 1; r <= 5; r++) {
+    for (let c = 1; c <= 5; c++) {
+      const key = `${r},${c}`;
+      const cell = document.createElement('div');
+      cell.className = 'cell';
+
+      if (prefilledMap[key]) {
+        cell.classList.add('prefilled');
+        cell.textContent = prefilledMap[key];
+      } else if (emptyCellMap[key] !== undefined) {
+        cell.classList.add('empty');
+        const cellIndex = emptyCellMap[key];
+        const dieIndex = cellToDie[cellIndex];
+        if (dieIndex !== undefined) {
+          const ds = diceState[dieIndex];
+          const actualIdx = getActualFaceIndex(dieIndex, ds.faceIndex);
+          const letter = diceFaces[dieIndex][actualIdx];
+          const dieEl = document.createElement('div');
+          dieEl.className = 'die';
+          if (selectedDieIndex === dieIndex) {
+            dieEl.classList.add('selected');
+          }
+          dieEl.textContent = letter;
+          attachDieHandlers(dieEl, dieIndex);
+          cell.appendChild(dieEl);
+        }
+        cell.addEventListener('click', (e) => {
+          e.stopPropagation();
+          onEmptyCellClick(cellIndex);
+        });
+      } else {
+        cell.classList.add('disabled');
+        cell.style.background = '#000000';
+        cell.style.borderColor = '#000000';
+      }
+      gridEl.appendChild(cell);
+    }
+  }
+}
+
+function renderDicePanel() {
+  gameDicePanel.innerHTML = '';
+  dieOrder.forEach(dieIdx => {
+    const ds = diceState[dieIdx];
+    if (ds.location === 'grid') return;
+    const dieEl = document.createElement('div');
+    dieEl.className = 'die';
+    if (selectedDieIndex === dieIdx) {
+      dieEl.classList.add('selected');
+    }
+    const actualIdx = getActualFaceIndex(dieIdx, ds.faceIndex);
+    dieEl.textContent = diceFaces[dieIdx][actualIdx];
+    attachDieHandlers(dieEl, dieIdx);
+    gameDicePanel.appendChild(dieEl);
+  });
+}
+
+function onDieClick(dieIdx) {
+  if (selectedDieIndex === dieIdx) {
+    cycleDieFace(dieIdx);
+    saveGame(); // Auto-save on face change
+  } else {
+    selectedDieIndex = dieIdx;
+    renderGrid();
+    renderDicePanel();
+  }
+}
+
+function cycleDieFace(dieIdx) {
+  const ds = diceState[dieIdx];
+  const indices = getVisibleFaceIndices(dieIdx);
+  ds.faceIndex = (ds.faceIndex + 1) % indices.length;
+  renderGrid();
+  renderDicePanel();
+}
+
+function onEmptyCellClick(cellIndex) {
+  if (selectedDieIndex === null) return;
+  const movingDie = selectedDieIndex;
+  diceState[movingDie].location = 'grid';
+  diceState[movingDie].cellIndex = cellIndex;
+  selectedDieIndex = null;
+  renderGrid();
+  renderDicePanel();
+  saveGame(); // Auto-save on die placement
+}
+
+function openFaceModal(dieIndex) {
+  const indices = getVisibleFaceIndices(dieIndex);
+  modalFaces.innerHTML = '';
+  indices.forEach((actualIdx, i) => {
+    const ch = diceFaces[dieIndex][actualIdx];
+    const btn = document.createElement('button');
+    btn.className = 'modal-face-btn';
+    btn.textContent = ch;
+    btn.addEventListener('click', () => {
+      diceState[dieIndex].faceIndex = i;
+      modalOverlay.style.display = 'none';
+      renderGrid();
+      renderDicePanel();
+      saveGame(); // Auto-save on face selection
+    });
+    modalFaces.appendChild(btn);
+  });
+  modalOverlay.style.display = 'flex';
+}
+
+function initFacesSelector() {
+  renderFacesSelector();
+}
+
+function renderFacesSelector() {
+  facesSelectEl.innerHTML = '';
+  for (let n = 1; n <= 6; n++) {
+    const btn = document.createElement('button');
+    btn.textContent = n;
+    if (n === facesPerDie) btn.classList.add('active');
+    
+    // Lock difficulty: disable buttons for difficulties above maxFacesPerDie
+    if (maxFacesPerDie !== null) {
+      if (n > maxFacesPerDie) {
+        btn.classList.add('disabled');
+        btn.style.cursor = 'not-allowed';
+        btn.addEventListener('click', (e) => {
+          e.preventDefault();
+          alert(`Difficulty is locked at ${difficultyNames[maxFacesPerDie]} or lower. You cannot increase difficulty.`);
+        });
+      } else {
+        // Allow changing within allowed range
+        btn.addEventListener('click', () => {
+          facesPerDie = n;
+          if (n < maxFacesPerDie) {
+            maxFacesPerDie = n; // Update max when going lower
+          }
+          renderFacesSelector(); // Re-render to update disabled state
+          resetPuzzle();
+          saveGame(); // Auto-save on difficulty change
+        });
+      }
+    } else {
+      // Not locked yet
+      btn.addEventListener('click', () => {
+        facesPerDie = n;
+        resetPuzzle();
+        saveGame(); // Auto-save on difficulty change
+      });
+    }
+    
+    facesSelectEl.appendChild(btn);
+  }
+}
+
+function updateFacesSelector() {
+  Array.from(facesSelectEl.children).forEach((btn, i) => {
+    btn.classList.toggle('active', i + 1 === facesPerDie);
+  });
+}
+
+function getWordsFromGrid() {
+  const grid = {};
+  puzzle.prefilled.forEach(p => {
+    grid[`${p.r},${p.c}`] = p.ch;
+  });
+  diceState.forEach((ds, idx) => {
+    if (ds.location === 'grid' && ds.cellIndex !== null) {
+      const cell = emptyCells[ds.cellIndex];
+      const actualIdx = getActualFaceIndex(idx, ds.faceIndex);
+      grid[`${cell.r},${cell.c}`] = diceFaces[idx][actualIdx];
+    }
+  });
+
+  const h1 = [1,2,3,4,5].map(c => grid[`2,${c}`]).join('');
+  const h2 = [1,2,3,4,5].map(c => grid[`4,${c}`]).join('');
+  const v1 = [1,2,3,4,5].map(r => grid[`${r},2`]).join('');
+  const v2 = [1,2,3,4,5].map(r => grid[`${r},4`]).join('');
+  return [h1, h2, v1, v2];
+}
+
+function checkSolution() {
+  const [h1, h2, v1, v2] = getWordsFromGrid();
+  const sol = puzzle.solution;
+  const feedback = [];
+  
+  // Get today's date
+  const today = new Date();
+  const dateStr = today.toLocaleDateString('en-US', { 
+    weekday: 'short', 
+    year: 'numeric', 
+    month: 'short', 
+    day: 'numeric' 
+  });
+  
+  const difficultyName = difficultyNames[facesPerDie] || 'Regular';
+
+  function feedbackItem(label, word, intended) {
+    const valid = wordList.has(word);
+    const correct = word === intended;
+    let cls = 'invalid';
+    let text = `${label}: ${word} (invalid)`;
+    if (valid) {
+      if (correct) {
+        cls = 'correct';
+        text = `${label}: ${word} ✓`;
+      } else {
+        cls = 'valid';
+        text = `${label}: ${word} (valid alternate)`;
+      }
+    }
+    return [cls, text];
+  }
+
+  feedback.push(feedbackItem('Across 1', h1, sol.H1));
+  feedback.push(feedbackItem('Across 2', h2, sol.H2));
+  feedback.push(feedbackItem('Down 1', v1, sol.V1));
+  feedback.push(feedbackItem('Down 2', v2, sol.V2));
+
+  feedbackEl.innerHTML = '';
+  feedback.forEach(f => {
+    const div = document.createElement('div');
+    div.className = `feedback-item ${f[0]}`;
+    div.textContent = f[1];
+    feedbackEl.appendChild(div);
+  });
+
+  const allCorrect = feedback.every(f => f[0] === 'correct');
+  if (allCorrect) {
+    const div = document.createElement('div');
+    div.style.marginTop = '10px';
+    div.style.fontWeight = 'bold';
+    div.style.color = '#2e7d32';
+    div.textContent = `🎉 Congratulations! You solved Cross Dice at ${difficultyName} difficulty for ${dateStr}!`;
+    feedbackEl.appendChild(div);
+    clearSavedGame(); // Clear save on successful solve
+  } else {
+    const allValid = feedback.every(f => f[0] === 'correct' || f[0] === 'valid');
+    if (allValid) {
+      const div = document.createElement('div');
+      div.style.marginTop = '10px';
+      div.style.fontWeight = 'bold';
+      div.style.color = '#f57c00';
+      div.textContent = `🎉 Congratulations! You found an alternate solution for Cross Dice at ${difficultyName} difficulty for ${dateStr}!`;
+      feedbackEl.appendChild(div);
+      clearSavedGame(); // Clear save on successful solve
+    }
+  }
+}
+
+function resetPuzzle() {
+  initDiceState();
+  feedbackEl.innerHTML = '';
+  renderGrid();
+  renderDicePanel();
+  saveGame(); // Auto-save on reset
+}
+
+// === TRANSITION FROM SPLASH TO GAME ===
+
+startBtn.addEventListener('click', () => {
+  // Get selected difficulty from splash
+  const activeBtn = document.querySelector('.difficulty-buttons button.active');
+  const selectedName = activeBtn ? activeBtn.textContent : 'Regular';
+  const diffMap = {
+    'Learning': 1,
+    'Easy': 2,
+    'Regular': 3,
+    'Hard': 4,
+    'Pro': 5,
+    'Extreme': 6
+  };
+  facesPerDie = diffMap[selectedName] || 3;
+  maxFacesPerDie = facesPerDie; // Lock maximum difficulty
+
+  // Hide splash, show game
+  document.getElementById('splashPage').classList.add('hidden');
+  document.getElementById('gamePage').classList.remove('hidden');
+
+  // Initialize game with selected difficulty
+  initFacesSelector();
+  updateFacesSelector();
+  initDiceState();
+  renderGrid();
+  renderDicePanel();
+  saveGame(); // Auto-save on game start
+});
+
+statsBtn.addEventListener('click', () => {
+  alert('Stats screen coming soon!');
+});
+
+modalClose.addEventListener('click', () => {
+  modalOverlay.style.display = 'none';
+});
+
+checkBtn.addEventListener('click', checkSolution);
+resetBtn.addEventListener('click', resetPuzzle);
+
+// === INITIALIZATION ===
+
+// Check for saved game on page load
+if (loadGame()) {
+  // Load saved game, skip splash
+  document.getElementById('splashPage').classList.add('hidden');
+  document.getElementById('gamePage').classList.remove('hidden');
+  initFacesSelector();
+  updateFacesSelector();
+  renderGrid();
+  renderDicePanel();
+} else {
+  // No saved game, show splash
+  splashInitDiceState();
+  splashRenderGrid();
+  splashRenderDicePanel();
+  splashRenderDifficultyButtons();
+}
+
+</script>
+</body>
+</html>
