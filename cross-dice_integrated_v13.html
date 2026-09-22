@@ -1,438 +1,77 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
+<meta charset="UTF-8">
 <title>Cross Dice</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <style>
 :root{--cell-size:56px;--gap:8px;--bg:#f5f5f5;--cell-bg:#fafafa;--cell-border:#ccc;--prefilled-bg:#e0e0e0;--die-bg:#fff;--die-border:#333;--die-selected:#4a90e2;--text:#222;--disabled-text:#999;--save-indicator:#2e7d32}
-body{font-family:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);margin:0;padding:16px;-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}
-.splash-container{max-width:500px;margin:0 auto}
-.splash-header{text-align:center;margin-bottom:24px}
-.splash-header h1{font-size:28px;margin:0 0 12px}
-.splash-card{background:#fff;border-radius:12px;padding:20px;margin-bottom:20px;box-shadow:0 2px 8px rgba(0,0,0,.1)}
-.splash-card p{margin:0 0 12px;font-size:16px;line-height:1.5}
-.sample-grid{display:flex;gap:var(--gap);justify-content:center;margin:16px 0}
-.cell{width:var(--cell-size);height:var(--cell-size);background:var(--cell-bg);border:1px solid var(--cell-border);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:700;position:relative;user-select:none}
-.cell.prefilled{background:var(--prefilled-bg)}
-.cell.empty{cursor:pointer}
-.dice-panel{display:flex;gap:10px;justify-content:center;margin-bottom:16px;min-height:60px;padding:8px;background:#eee;border-radius:8px;cursor:pointer}
-.die{width:var(--cell-size);height:var(--cell-size);background:var(--die-bg);border:2px solid var(--die-border);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:700;cursor:pointer;position:relative;user-select:none;-webkit-touch-callout:none;transition:transform .1s}
-.die.selected{border-color:var(--die-selected);box-shadow:0 0 0 2px rgba(74,144,226,.4)}
-.die.long-pressing{transform:scale(.95)}
-.difficulty-buttons{display:flex;gap:6px;overflow-x:auto;padding-bottom:8px;margin:12px 0}
-.difficulty-buttons button{flex:0 0 auto;border:1px solid #999;background:#fff;padding:8px 12px;font-size:13px;cursor:pointer;border-radius:6px;white-space:nowrap}
-.difficulty-buttons button.active{background:var(--die-selected);color:#fff;border-color:var(--die-selected)}
-.faces-info{text-align:center;font-size:14px;color:#666;min-height:20px;margin:12px 0}
-.splash-actions{display:flex;gap:12px;justify-content:center;margin-top:16px}
-.splash-actions button{padding:12px 24px;font-size:16px;border:none;border-radius:8px;cursor:pointer}
-.splash-actions button.primary{background:var(--die-selected);color:#fff}
-.splash-actions button.primary:hover{background:#357abd}
-.splash-actions button.secondary{background:#fff;color:var(--text);border:1px solid #999}
-.game-container{max-width:500px;margin:0 auto}
-.controls{display:flex;justify-content:center;align-items:center;gap:12px;margin-bottom:16px;flex-wrap:wrap}
-.controls label{font-size:14px}
-.faces-select{display:flex;gap:4px}
-.faces-select button{border:1px solid #999;background:#fff;padding:4px 8px;font-size:13px;cursor:pointer;border-radius:4px}
-.faces-select button.active{background:#333;color:#fff;border-color:#333}
-.faces-select button.disabled{background:#ddd;color:var(--disabled-text);border-color:#ccc;cursor:not-allowed}
-.faces-select button.disabled.active{background:#bbb;color:#666;border-color:#999}
-.grid{display:grid;grid-template-columns:repeat(5,var(--cell-size));grid-template-rows:repeat(5,var(--cell-size));gap:var(--gap);justify-content:center;margin-bottom:20px}
-.game-dice-panel{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-bottom:16px;min-height:60px;padding:8px;background:#eee;border-radius:8px}
-.panel-label{width:100%;text-align:center;font-size:13px;color:#555;margin-bottom:4px}
-.actions{display:flex;justify-content:center;gap:12px;margin-bottom:16px}
-.actions button{padding:8px 16px;font-size:14px;border:1px solid #999;background:#fff;border-radius:6px;cursor:pointer}
-.actions button.primary{background:#333;color:#fff;border-color:#333}
-.feedback{max-width:500px;margin:0 auto;background:#fff;border:1px solid #ddd;border-radius:8px;padding:12px;font-size:14px}
-.feedback-item{margin:6px 0}
-.feedback-item.correct{color:#2e7d32;font-weight:700}
-.feedback-item.valid{color:#f57c00;font-weight:700}
-.feedback-item.invalid{color:#c62828;font-weight:700}
-.save-indicator{text-align:center;font-size:12px;color:var(--save-indicator);margin-top:8px;opacity:0;transition:opacity .3s}
-.save-indicator.visible{opacity:1}
-.hidden{display:none!important}
-.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;align-items:center;justify-content:center;z-index:1000}
-.modal{background:#fff;border-radius:8px;padding:16px;max-width:90vw;width:260px}
-.modal h3{margin:0 0 12px;font-size:16px;text-align:center}
-.modal-faces{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
-.modal-face-btn{background:#f5f5f5;border:1px solid #ccc;border-radius:6px;padding:10px;font-size:18px;font-weight:700;cursor:pointer}
-.modal-face-btn:active{background:#e0e0e0}
-.modal-close{margin-top:12px;text-align:center}
-.modal-close button{padding:6px 12px;font-size:13px;border:1px solid #999;background:#fff;border-radius:4px;cursor:pointer}
-.game-header{text-align:center;margin-bottom:12px}
-.game-header h1{font-size:20px;margin:0 0 6px}
-.date-label{font-size:14px;color:#666}
+body{font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:var(--bg);color:var(--text);margin:0;padding:16px;-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}
+.hidden{display:none!important}.splash-container,.game-container{max-width:500px;margin:0 auto}.splash-header{text-align:center;margin-bottom:24px}.splash-header h1{font-size:28px;margin:0 0 12px}.splash-card{background:#fff;border-radius:12px;padding:20px;margin-bottom:20px;box-shadow:0 2px 8px rgba(0,0,0,.1)}.splash-card p{margin:0 0 12px;font-size:16px;line-height:1.5}.sample-grid{display:flex;gap:var(--gap);justify-content:center;margin:16px 0}.cell{width:var(--cell-size);height:var(--cell-size);background:var(--cell-bg);border:1px solid var(--cell-border);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:bold;position:relative;user-select:none}.cell.prefilled{background:var(--prefilled-bg)}.cell.empty{cursor:pointer}.dice-panel,.game-dice-panel{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-bottom:16px;min-height:60px;padding:8px;background:#eee;border-radius:8px;cursor:pointer}.die{width:var(--cell-size);height:var(--cell-size);background:var(--die-bg);border:2px solid var(--die-border);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:bold;cursor:pointer;position:relative;user-select:none;-webkit-touch-callout:none;transition:transform .1s}.die.selected{border-color:var(--die-selected);box-shadow:0 0 0 2px rgba(74,144,226,.4)}.die.long-pressing{transform:scale(.95)}.difficulty-buttons{display:flex;gap:6px;overflow-x:auto;padding-bottom:8px;margin:12px 0}.difficulty-buttons button,.faces-select button{border:1px solid #999;background:#fff;padding:8px 12px;font-size:13px;cursor:pointer;border-radius:6px;white-space:nowrap}.difficulty-buttons button.active{background:var(--die-selected);color:#fff;border-color:var(--die-selected)}.faces-info{text-align:center;font-size:14px;color:#666;min-height:20px;margin:12px 0}.splash-actions,.actions{display:flex;gap:12px;justify-content:center;margin-top:16px}.splash-actions button{padding:12px 24px;font-size:16px;border:none;border-radius:8px;cursor:pointer}.splash-actions .primary,.actions .primary{background:var(--die-selected);color:#fff}.splash-actions .secondary,.actions button{background:#fff;color:var(--text);border:1px solid #999}.controls{display:flex;justify-content:center;align-items:center;gap:12px;margin-bottom:16px;flex-wrap:wrap}.faces-select{display:flex;gap:4px}.faces-select button{padding:4px 8px;border-radius:4px}.faces-select button.active{background:#333;color:#fff;border-color:#333}.faces-select button.disabled{background:#ddd;color:var(--disabled-text);cursor:not-allowed}.grid{display:grid;grid-template-columns:repeat(5,var(--cell-size));grid-template-rows:repeat(5,var(--cell-size));gap:var(--gap);justify-content:center;margin-bottom:20px}.cell.disabled{background:#000;border-color:#000}.actions{margin-bottom:16px}.actions button{padding:8px 16px;font-size:14px;border-radius:6px;cursor:pointer}.feedback{max-width:500px;margin:0 auto;background:#fff;border:1px solid #ddd;border-radius:8px;padding:12px;font-size:14px}.feedback-item{margin:6px 0}.feedback-item.correct{color:#2e7d32;font-weight:bold}.feedback-item.valid{color:#f57c00;font-weight:bold}.feedback-item.invalid{color:#c62828}.save-indicator{text-align:center;font-size:12px;color:var(--save-indicator);margin-top:8px;opacity:0;transition:opacity .3s}.save-indicator.visible{opacity:1}.panel-label{width:100%;text-align:center;font-size:13px;color:#555;margin-bottom:4px}.game-header{text-align:center;margin-bottom:12px}.game-header h1{font-size:20px;margin:0 0 6px}.date-label{font-size:14px;color:#666}.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;align-items:center;justify-content:center;z-index:1000}.modal{background:#fff;border-radius:8px;padding:16px;max-width:90vw;width:260px}.modal h3{margin:0 0 12px;font-size:16px;text-align:center}.modal-faces{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.modal-face-btn{background:#f5f5f5;border:1px solid #ccc;border-radius:6px;padding:10px;font-size:18px;font-weight:bold;cursor:pointer}.modal-close{margin-top:12px;text-align:center}.modal-close button{padding:6px 12px;font-size:13px;border:1px solid #999;background:#fff;border-radius:4px;cursor:pointer}
 </style>
 </head>
 <body>
-
-<!-- SPLASH -->
 <div id="splashPage" class="splash-container">
   <div class="splash-header"><h1>How to Play</h1></div>
   <div class="splash-card">
     <p>You will see a small crossword‑style grid.</p>
     <div class="sample-grid" id="sampleGrid"></div>
     <p>Fill in the blank squares using the dice in the tray below.</p>
-    <div class="panel-label">Dice tray (tap to select/move, tap again to cycle face, long‑press to pick face)</div>
+    <div class="panel-label">Dice tray: tap to select/move, tap again to cycle face, long‑press to pick face</div>
     <div class="dice-panel" id="dicePanel"></div>
     <p>Choose your difficulty.</p>
     <div class="difficulty-buttons" id="difficultyButtons"></div>
     <p class="faces-info" id="facesInfo"></p>
-    <div class="splash-actions">
-      <button class="primary" id="startBtn">Start</button>
-      <button class="secondary" id="statsBtn">Stats</button>
-    </div>
+    <div class="splash-actions"><button class="primary" id="startBtn">Start</button><button class="secondary" id="statsBtn">Stats</button></div>
   </div>
 </div>
-
-<!-- GAME -->
 <div id="gamePage" class="game-container hidden">
-  <div class="game-header">
-    <h1>Cross Dice</h1>
-    <div class="date-label" id="dateLabel">Daily Puzzle · </div>
-  </div>
-  <div class="controls">
-    <label>Difficulty (can be lowered)</label>
-    <div class="faces-select" id="facesSelect"></div>
-  </div>
+  <div class="game-header"><h1>Cross Dice</h1><div class="date-label" id="dateLabel"></div></div>
+  <div class="controls"><label>Difficulty (can be lowered)</label><div class="faces-select" id="facesSelect"></div></div>
   <div class="grid" id="grid"></div>
-  <div class="panel-label">Dice tray (tap to select/move, tap again to cycle face, long‑press to pick face)</div>
+  <div class="panel-label">Dice tray: tap to select/move, tap again to cycle face, long‑press to pick face</div>
   <div class="game-dice-panel" id="gameDicePanel"></div>
-  <div class="actions">
-    <button id="checkBtn" class="primary">Check</button>
-    <button id="resetBtn">Reset</button>
-  </div>
-  <div class="feedback" id="feedback"></div>
-  <div class="save-indicator" id="saveIndicator">Game saved</div>
+  <div class="actions"><button id="checkBtn" class="primary">Check</button><button id="resetBtn">Reset</button></div>
+  <div class="feedback" id="feedback"></div><div class="save-indicator" id="saveIndicator">Game saved</div>
 </div>
-
-<!-- MODAL -->
-<div class="modal-overlay" id="modalOverlay">
-  <div class="modal">
-    <h3>Select face</h3>
-    <div class="modal-faces" id="modalFaces"></div>
-    <div class="modal-close"><button id="modalClose">Close</button></div>
-  </div>
-</div>
-
+<div class="modal-overlay" id="modalOverlay"><div class="modal"><h3>Select face</h3><div class="modal-faces" id="modalFaces"></div><div class="modal-close"><button id="modalClose">Close</button></div></div></div>
 <script>
-/* ========== SHARED CONSTANTS ========== */
-const allFaces=['B','D','P','Q','X','Y'];
-const solutionLetter='P';
-const solutionIndex=allFaces.indexOf(solutionLetter);
-const LONGPRESS_DELAY=350;
-const SAVE_KEY='crossDiceSavedGame';
+const LONGPRESS_DELAY=350,SAVE_KEY='crossDiceSavedGame';
 const difficultyNames={1:'Learning',2:'Easy',3:'Regular',4:'Hard',5:'Pro',6:'Extreme'};
-
-/* ========== SPLASH STATE ========== */
-let splashFacesPerDie=3;
-let splashDiceState=[];
-let splashSelectedDieIndex=null;
-let splashLongPressTimer=null;
-let splashCurrentDieForLongPress=null;
-const splashEmptyCells=[{r:0,c:0}];
-const splashPrefilledCells=[{r:0,c:1,ch:'L'},{r:0,c:2,ch:'A'},{r:0,c:3,ch:'Y'}];
-
-/* ========== GAME STATE (will be set from daily puzzle) ========== */
-let activePuzzle=null;      // { prefilled, emptyCells, dice, intendedSolution }
-let sortedDice=[];          // sorted faces per die
-let puzzleSolutionIndex=[]; // index of required letter in sortedDice[dieIdx]
-const emptyCells=[];        // will be set from activePuzzle
-let facesPerDie=6;
-let maxFacesPerDie=null;
-let diceState=[];
-let selectedDieIndex=null;
-let dieOrder=[];
-let longPressTimer=null;
-let currentDieForLongPress=null;
-let activePuzzleId=null;
-let gameDate=null;
-
-/* ========== DOM ========== */
-const sampleGrid=document.getElementById('sampleGrid'), dicePanel=document.getElementById('dicePanel'),
-  difficultyButtonsEl=document.getElementById('difficultyButtons'), facesInfoEl=document.getElementById('facesInfo'),
-  startBtn=document.getElementById('startBtn'), statsBtn=document.getElementById('statsBtn'),
-  gridEl=document.getElementById('grid'), facesSelectEl=document.getElementById('facesSelect'),
-  gameDicePanel=document.getElementById('gameDicePanel'), checkBtn=document.getElementById('checkBtn'),
-  resetBtn=document.getElementById('resetBtn'), feedbackEl=document.getElementById('feedback'),
-  saveIndicator=document.getElementById('saveIndicator'), dateLabelEl=document.getElementById('dateLabel'),
-  modalOverlay=document.getElementById('modalOverlay'), modalFaces=document.getElementById('modalFaces'),
-  modalClose=document.getElementById('modalClose');
-
-/* ========== EASTERN DATE ========== */
-function getEasternDate(){
-  const now=new Date();
-  const et=new Date(now.toLocaleString('en-US',{timeZone:'America/New_York'}));
-  const y=et.getFullYear(), m=String(et.getMonth()+1).padStart(2,'0'), d=String(et.getDate()).padStart(2,'0');
-  return `${y}-${m}-${d}`;
-}
-
-/* ========== AUTO-SAVE ========== */
-function saveGame(){
-  const gameState={
-    facesPerDie:facesPerDie,
-    maxFacesPerDie:maxFacesPerDie,
-    diceState:diceState,
-    dieOrder:dieOrder,
-    gameDate:getEasternDate(),
-    puzzleId:activePuzzleId
-  };
-  localStorage.setItem(SAVE_KEY,JSON.stringify(gameState));
-  showSaveIndicator();
-}
-function loadGame(){
-  const saved=localStorage.getItem(SAVE_KEY);
-  if(!saved)return false;
-  try{
-    const gameState=JSON.parse(saved);
-    const todayEastern=getEasternDate();
-    if(gameState.gameDate!==todayEastern){localStorage.removeItem(SAVE_KEY);return false;}
-    if(gameState.puzzleId!==activePuzzleId){localStorage.removeItem(SAVE_KEY);return false;}
-    facesPerDie=gameState.facesPerDie||6;
-    maxFacesPerDie=gameState.maxFacesPerDie||facesPerDie;
-    diceState=gameState.diceState;
-    dieOrder=gameState.dieOrder;
-    selectedDieIndex=null;
-    return true;
-  }catch(e){console.error('Failed to load saved game',e);localStorage.removeItem(SAVE_KEY);return false;}
-}
-function clearSavedGame(){localStorage.removeItem(SAVE_KEY);}
-function showSaveIndicator(){saveIndicator.classList.add('visible');setTimeout(()=>saveIndicator.classList.remove('visible'),2000);}
-
-/* ========== SPLASH FUNCTIONS ========== */
-function splashGetVisibleFaceIndices(){
-  const N=splashFacesPerDie, indices=[solutionIndex];
-  for(let i=0;i<allFaces.length&&indices.length<N;i++){if(i!==solutionIndex&&!indices.includes(i))indices.push(i);}
-  indices.sort((a,b)=>a-b);
-  return indices;
-}
-function splashInitDiceState(){splashDiceState=[{location:'tray',cellIndex:null,faceIndex:0}];splashSelectedDieIndex=null;}
-function splashGetActualFaceIndex(dieIdx,visibleIndex){return splashGetVisibleFaceIndices()[visibleIndex];}
-function splashClearLongPress(){if(splashLongPressTimer){clearTimeout(splashLongPressTimer);splashLongPressTimer=null;}splashCurrentDieForLongPress=null;}
-function splashAttachDieHandlers(dieEl,dieIdx){
-  dieEl.addEventListener('contextmenu',e=>e.preventDefault());
-  dieEl.addEventListener('touchstart',e=>{e.stopPropagation();e.preventDefault();splashClearLongPress();splashCurrentDieForLongPress=dieIdx;dieEl.classList.add('long-pressing');splashLongPressTimer=setTimeout(()=>{dieEl.classList.remove('long-pressing');splashOpenFaceModal(dieIdx);splashClearLongPress();},LONGPRESS_DELAY);},{passive:false});
-  dieEl.addEventListener('touchend',e=>{e.stopPropagation();e.preventDefault();if(splashLongPressTimer&&splashCurrentDieForLongPress===dieIdx){splashClearLongPress();dieEl.classList.remove('long-pressing');splashOnDieClick(dieIdx);}},{passive:false});
-  dieEl.addEventListener('touchmove',e=>{e.stopPropagation();e.preventDefault();splashClearLongPress();dieEl.classList.remove('long-pressing');},{passive:false});
-  dieEl.addEventListener('touchcancel',e=>{e.stopPropagation();e.preventDefault();splashClearLongPress();dieEl.classList.remove('long-pressing');},{passive:false});
-  dieEl.addEventListener('mousedown',e=>{e.stopPropagation();splashClearLongPress();splashCurrentDieForLongPress=dieIdx;dieEl.classList.add('long-pressing');splashLongPressTimer=setTimeout(()=>{dieEl.classList.remove('long-pressing');splashOpenFaceModal(dieIdx);splashClearLongPress();},LONGPRESS_DELAY);});
-  dieEl.addEventListener('mouseup',e=>{e.stopPropagation();if(splashLongPressTimer&&splashCurrentDieForLongPress===dieIdx){splashClearLongPress();dieEl.classList.remove('long-pressing');splashOnDieClick(dieIdx);}});
-  dieEl.addEventListener('mouseleave',e=>{e.stopPropagation();splashClearLongPress();dieEl.classList.remove('long-pressing');});
-}
-function splashRenderGrid(){
-  sampleGrid.innerHTML='';const cellToDie={};splashDiceState.forEach((ds,idx)=>{if(ds.location==='grid'&&ds.cellIndex!==null)cellToDie[ds.cellIndex]=idx;});
-  for(let r=0;r<1;r++){for(let c=0;c<4;c++){const cell=document.createElement('div');cell.className='cell';const prefilled=splashPrefilledCells.find(p=>p.r===r&&p.c===c);if(prefilled){cell.classList.add('prefilled');cell.textContent=prefilled.ch;}else if(splashEmptyCells.some(e=>e.r===r&&e.c===c)){cell.classList.add('empty');const cellIndex=splashEmptyCells.findIndex(e=>e.r===r&&e.c===c);const dieIndex=cellToDie[cellIndex];if(dieIndex!==undefined){const ds=splashDiceState[dieIndex];const actualIdx=splashGetActualFaceIndex(dieIndex,ds.faceIndex);const letter=allFaces[actualIdx];const dieEl=document.createElement('div');dieEl.className='die';if(splashSelectedDieIndex===dieIndex)dieEl.classList.add('selected');dieEl.textContent=letter;splashAttachDieHandlers(dieEl,dieIndex);cell.appendChild(dieEl);}cell.addEventListener('click',e=>{e.stopPropagation();splashOnEmptyCellClick(cellIndex);});}sampleGrid.appendChild(cell);}}
-}
-function splashRenderDicePanel(){
-  dicePanel.innerHTML='';splashDiceState.forEach((ds,dieIdx)=>{if(ds.location==='grid')return;const dieEl=document.createElement('div');dieEl.className='die';if(splashSelectedDieIndex===dieIdx)dieEl.classList.add('selected');const actualIdx=splashGetActualFaceIndex(dieIdx,ds.faceIndex);dieEl.textContent=allFaces[actualIdx];splashAttachDieHandlers(dieEl,dieIdx);dicePanel.appendChild(dieEl);});
-}
-function splashOnDieClick(dieIdx){if(splashSelectedDieIndex===dieIdx){splashCycleDieFace(dieIdx);}else{splashSelectedDieIndex=dieIdx;splashRenderGrid();splashRenderDicePanel();}}
-function splashCycleDieFace(dieIdx){const ds=splashDiceState[dieIdx];const indices=splashGetVisibleFaceIndices();ds.faceIndex=(ds.faceIndex+1)%indices.length;splashRenderGrid();splashRenderDicePanel();}
-function splashOnEmptyCellClick(cellIndex){if(splashSelectedDieIndex===null)return;const movingDie=splashSelectedDieIndex;splashDiceState[movingDie].location='grid';splashDiceState[movingDie].cellIndex=cellIndex;splashSelectedDieIndex=null;splashRenderGrid();splashRenderDicePanel();}
-dicePanel.addEventListener('click',e=>{if(e.target===dicePanel){const dieInGrid=splashDiceState.findIndex(ds=>ds.location==='grid');if(dieInGrid!==-1){splashSelectedDieIndex=dieInGrid;splashDiceState[dieInGrid].location='tray';splashDiceState[dieInGrid].cellIndex=null;splashSelectedDieIndex=null;splashRenderGrid();splashRenderDicePanel();}else if(splashSelectedDieIndex!==null){splashDiceState[splashSelectedDieIndex].location='tray';splashSelectedDieIndex=null;splashRenderGrid();splashRenderDicePanel();}}});
-function splashOpenFaceModal(dieIndex){const indices=splashGetVisibleFaceIndices();modalFaces.innerHTML='';indices.forEach((actualIdx,i)=>{const ch=allFaces[actualIdx];const btn=document.createElement('button');btn.className='modal-face-btn';btn.textContent=ch;btn.addEventListener('click',()=>{splashDiceState[dieIndex].faceIndex=i;modalOverlay.style.display='none';splashRenderGrid();splashRenderDicePanel();});modalFaces.appendChild(btn);});modalOverlay.style.display='flex';}
-function splashRenderDifficultyButtons(){
-  const difficulties=[{name:'Learning',faces:1},{name:'Easy',faces:2},{name:'Regular',faces:3},{name:'Hard',faces:4},{name:'Pro',faces:5},{name:'Extreme',faces:6}];
-  difficultyButtonsEl.innerHTML='';difficulties.forEach((diff,idx)=>{const btn=document.createElement('button');btn.textContent=diff.name;if(idx===2)btn.classList.add('active');btn.addEventListener('click',()=>{document.querySelectorAll('.difficulty-buttons button').forEach(b=>b.classList.remove('active'));btn.classList.add('active');splashFacesPerDie=diff.faces;facesInfoEl.textContent=`Each die has ${diff.faces} possible value${diff.faces===1?'':'s'}.`;splashInitDiceState();splashRenderGrid();splashRenderDicePanel();});difficultyButtonsEl.appendChild(btn);});const defaultDiff=difficulties[2];facesInfoEl.textContent=`Each die has ${defaultDiff.faces} possible value${defaultDiff.faces===1?'':'s'}.`;
-}
-
-/* ========== GAME FUNCTIONS ========== */
-function shuffle(array){for(let i=array.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[array[i],array[j]]=[array[j],array[i]];}}
-
-function getVisibleFaceIndices(dieIdx){
-  const N=facesPerDie, solIdx=puzzleSolutionIndex[dieIdx];
-  if(N===1) return [solIdx];
-  if(solIdx<N) return Array.from({length:N},(_,i)=>i);
-  const indices=Array.from({length:N-1},(_,i)=>i);indices.push(solIdx);return indices;
-}
-function initDiceState(){
-  diceState=sortedDice.map((_,idx)=>({location:'tray',cellIndex:null,faceIndex:0}));
-  dieOrder=Array.from({length:sortedDice.length},(_,i)=>i);shuffle(dieOrder);selectedDieIndex=null;
-}
-function getActualFaceIndex(dieIdx,visibleIndex){return getVisibleFaceIndices(dieIdx)[visibleIndex];}
-function clearLongPress(){if(longPressTimer){clearTimeout(longPressTimer);longPressTimer=null;}currentDieForLongPress=null;}
-function attachDieHandlers(dieEl,dieIdx){
-  dieEl.addEventListener('contextmenu',e=>e.preventDefault());
-  dieEl.addEventListener('touchstart',e=>{e.stopPropagation();e.preventDefault();clearLongPress();currentDieForLongPress=dieIdx;dieEl.classList.add('long-pressing');longPressTimer=setTimeout(()=>{dieEl.classList.remove('long-pressing');openFaceModal(dieIdx);clearLongPress();saveGame();},LONGPRESS_DELAY);},{passive:false});
-  dieEl.addEventListener('touchend',e=>{e.stopPropagation();e.preventDefault();if(longPressTimer&&currentDieForLongPress===dieIdx){clearLongPress();dieEl.classList.remove('long-pressing');onDieClick(dieIdx);}},{passive:false});
-  dieEl.addEventListener('touchmove',e=>{e.stopPropagation();e.preventDefault();clearLongPress();dieEl.classList.remove('long-pressing');},{passive:false});
-  dieEl.addEventListener('touchcancel',e=>{e.stopPropagation();e.preventDefault();clearLongPress();dieEl.classList.remove('long-pressing');},{passive:false});
-  dieEl.addEventListener('mousedown',e=>{e.stopPropagation();clearLongPress();currentDieForLongPress=dieIdx;dieEl.classList.add('long-pressing');longPressTimer=setTimeout(()=>{dieEl.classList.remove('long-pressing');openFaceModal(dieIdx);clearLongPress();saveGame();},LONGPRESS_DELAY);});
-  dieEl.addEventListener('mouseup',e=>{e.stopPropagation();if(longPressTimer&&currentDieForLongPress===dieIdx){clearLongPress();dieEl.classList.remove('long-pressing');onDieClick(dieIdx);}});
-  dieEl.addEventListener('mouseleave',e=>{e.stopPropagation();clearLongPress();dieEl.classList.remove('long-pressing');});
-}
-function renderGrid(){
-  gridEl.innerHTML='';const cellToDie={};diceState.forEach((ds,idx)=>{if(ds.location==='grid'&&ds.cellIndex!==null)cellToDie[ds.cellIndex]=idx;});
-  const emptyCellMap={};emptyCells.forEach((cell,idx)=>{emptyCellMap[`${cell.r},${cell.c}`]=idx;});
-  const prefilledMap={};activePuzzle.prefilled.forEach(p=>{prefilledMap[`${p.r},${p.c}`]=p.ch;});
-  for(let r=1;r<=5;r++){for(let c=1;c<=5;c++){
-    const key=`${r},${c}`;const cell=document.createElement('div');cell.className='cell';
-    if(prefilledMap[key]){cell.classList.add('prefilled');cell.textContent=prefilledMap[key];}
-    else if(emptyCellMap[key]!==undefined){
-      cell.classList.add('empty');const cellIndex=emptyCellMap[key];const dieIndex=cellToDie[cellIndex];
-      if(dieIndex!==undefined){
-        const ds=diceState[dieIndex];const actualIdx=getActualFaceIndex(dieIndex,ds.faceIndex);
-        const letter=sortedDice[dieIndex][actualIdx];
-        const dieEl=document.createElement('div');dieEl.className='die';
-        if(selectedDieIndex===dieIndex)dieEl.classList.add('selected');
-        dieEl.textContent=letter;attachDieHandlers(dieEl,dieIndex);cell.appendChild(dieEl);
-      }
-      cell.addEventListener('click',e=>{e.stopPropagation();onEmptyCellClick(cellIndex);});
-    }else{cell.classList.add('disabled');cell.style.background='#000';cell.style.borderColor='#000';}
-    gridEl.appendChild(cell);
-  }}
-}
-function renderDicePanel(){
-  gameDicePanel.innerHTML='';dieOrder.forEach(dieIdx=>{
-    const ds=diceState[dieIdx];if(ds.location==='grid')return;
-    const dieEl=document.createElement('div');dieEl.className='die';
-    if(selectedDieIndex===dieIdx)dieEl.classList.add('selected');
-    const actualIdx=getActualFaceIndex(dieIdx,ds.faceIndex);
-    dieEl.textContent=sortedDice[dieIdx][actualIdx];attachDieHandlers(dieEl,dieIdx);gameDicePanel.appendChild(dieEl);
-  });
-}
-function onDieClick(dieIdx){if(selectedDieIndex===dieIdx){cycleDieFace(dieIdx);saveGame();}else{selectedDieIndex=dieIdx;renderGrid();renderDicePanel();}}
-function cycleDieFace(dieIdx){const ds=diceState[dieIdx];const indices=getVisibleFaceIndices(dieIdx);ds.faceIndex=(ds.faceIndex+1)%indices.length;renderGrid();renderDicePanel();}
-function onEmptyCellClick(cellIndex){if(selectedDieIndex===null)return;const movingDie=selectedDieIndex;diceState[movingDie].location='grid';diceState[movingDie].cellIndex=cellIndex;selectedDieIndex=null;renderGrid();renderDicePanel();saveGame();}
-function openFaceModal(dieIndex){const indices=getVisibleFaceIndices(dieIndex);modalFaces.innerHTML='';indices.forEach((actualIdx,i)=>{const ch=sortedDice[dieIndex][actualIdx];const btn=document.createElement('button');btn.className='modal-face-btn';btn.textContent=ch;btn.addEventListener('click',()=>{diceState[dieIndex].faceIndex=i;modalOverlay.style.display='none';renderGrid();renderDicePanel();saveGame();});modalFaces.appendChild(btn);});modalOverlay.style.display='flex';}
-function initFacesSelector(){renderFacesSelector();}
-function renderFacesSelector(){
-  facesSelectEl.innerHTML='';
-  for(let n=1;n<=6;n++){
-    const btn=document.createElement('button');btn.textContent=n;
-    if(n===facesPerDie)btn.classList.add('active');
-    if(maxFacesPerDie!==null){
-      if(n>maxFacesPerDie){
-        btn.classList.add('disabled');btn.style.cursor='not-allowed';
-        btn.addEventListener('click',e=>{e.preventDefault();alert(`Difficulty is locked at ${difficultyNames[maxFacesPerDie]} or lower.`);});
-      }else{
-        btn.addEventListener('click',()=>{
-          if(n===facesPerDie)return;
-          facesPerDie=n;if(n<maxFacesPerDie)maxFacesPerDie=n;
-          diceState.forEach((ds,idx)=>{const indices=getVisibleFaceIndices(idx);if(ds.faceIndex>=indices.length)ds.faceIndex=0;});
-          renderFacesSelector();renderGrid();renderDicePanel();saveGame();
-        });
-      }
-    }else{
-      btn.addEventListener('click',()=>{
-        if(n===facesPerDie)return;
-        facesPerDie=n;
-        diceState.forEach((ds,idx)=>{const indices=getVisibleFaceIndices(idx);if(ds.faceIndex>=indices.length)ds.faceIndex=0;});
-        renderFacesSelector();renderGrid();renderDicePanel();saveGame();
-      });
-    }
-    facesSelectEl.appendChild(btn);
-  }
-}
-function updateFacesSelector(){Array.from(facesSelectEl.children).forEach((btn,i)=>{btn.classList.toggle('active',i+1===facesPerDie);});}
-function getWordsFromGrid(){
-  const grid={};activePuzzle.prefilled.forEach(p=>{grid[`${p.r},${p.c}`]=p.ch;});
-  diceState.forEach((ds,idx)=>{
-    if(ds.location==='grid'&&ds.cellIndex!==null){
-      const cell=emptyCells[ds.cellIndex];const actualIdx=getActualFaceIndex(idx,ds.faceIndex);
-      const letter=sortedDice[idx][actualIdx];grid[`${cell.r},${cell.c}`]=letter;
-    }
-  });
-  const h1=[1,2,3,4,5].map(c=>grid[`2,${c}`]).join(''), h2=[1,2,3,4,5].map(c=>grid[`4,${c}`]).join(''), v1=[1,2,3,4,5].map(r=>grid[`${r},2`]).join(''), v2=[1,2,3,4,5].map(r=>grid[`${r},4`]).join('');
-  return {h1,h2,v1,v2};
-}
-function checkSolution(){
-  const {h1,h2,v1,v2}=getWordsFromGrid();const sol=activePuzzle.intendedSolution;const feedback=[];
-  const today=new Date();const dateStr=today.toLocaleDateString('en-US',{weekday:'short',year:'numeric',month:'short',day:'numeric'});
-  const difficultyName=difficultyNames[facesPerDie]||'Regular';
-  function feedbackItem(label,word,intended){
-    const valid=activePuzzle.validWords ? activePuzzle.validWords.includes(word) : true;
-    const correct=word===intended;
-    let cls='invalid',text=`${label}: ${word} (invalid)`;
-    if(valid){if(correct){cls='correct';text=`${label}: ${word}`;}else{cls='valid';text=`${label}: ${word} (valid alternate)`;}}
-    return [cls,text];
-  }
-  feedback.push(feedbackItem('Across 1',h1,sol.H1),feedbackItem('Across 2',h2,sol.H2),feedbackItem('Down 1',v1,sol.V1),feedbackItem('Down 2',v2,sol.V2));
-  feedbackEl.innerHTML='';feedback.forEach(f=>{const div=document.createElement('div');div.className=`feedback-item ${f[0]}`;div.textContent=f[1];feedbackEl.appendChild(div);});
-  const allCorrect=feedback.every(f=>f[0]==='correct');
-  if(allCorrect){
-    const div=document.createElement('div');div.style.marginTop='10px';div.style.fontWeight='bold';div.style.color='#2e7d32';
-    div.textContent=`Congratulations! You solved Cross Dice at ${difficultyName} difficulty for ${dateStr}!`;
-    feedbackEl.appendChild(div);clearSavedGame();
-  }else{
-    const allValid=feedback.every(f=>f[0]==='correct'||f[0]==='valid');
-    if(allValid){
-      const div=document.createElement('div');div.style.marginTop='10px';div.style.fontWeight='bold';div.style.color='#f57c00';
-      div.textContent=`Congratulations! You found an alternate solution for Cross Dice at ${difficultyName} difficulty for ${dateStr}!`;
-      feedbackEl.appendChild(div);clearSavedGame();
-    }
-  }
-}
-function resetPuzzle(){initDiceState();feedbackEl.innerHTML='';renderGrid();renderDicePanel();saveGame();}
-
-/* ========== TRANSITION ========== */
-startBtn.addEventListener('click',()=>{
-  const activeBtn=document.querySelector('.difficulty-buttons button.active');
-  const selectedName=activeBtn?activeBtn.textContent:'Regular';
-  const diffMap={'Learning':1,'Easy':2,'Regular':3,'Hard':4,'Pro':5,'Extreme':6};
-  facesPerDie=diffMap[selectedName]||3;maxFacesPerDie=facesPerDie;
-  document.getElementById('splashPage').classList.add('hidden');
-  document.getElementById('gamePage').classList.remove('hidden');
-  initFacesSelector();updateFacesSelector();initDiceState();renderGrid();renderDicePanel();saveGame();
-});
-statsBtn.addEventListener('click',()=>{alert('Stats screen coming soon!');});
-modalClose.addEventListener('click',()=>{modalOverlay.style.display='none';});
-checkBtn.addEventListener('click',checkSolution);resetBtn.addEventListener('click',resetPuzzle);
-
-/* ========== DAILY PUZZLE INIT ========== */
-async function initDailyPuzzle(){
-  try{
-    const res=await fetch('dailyPuzzles_30days_good.json');
-    const dailyPuzzles=await res.json();
-    const today=getEasternDate();
-    activePuzzle=dailyPuzzles[today];
-    if(!activePuzzle){
-      alert('No puzzle available for today.');
-      return;
-    }
-    activePuzzleId=activePuzzle.id;
-    gameDate=activePuzzle.date;
-
-    // Copy emptyCells and set sortedDice
-    emptyCells.length=0;
-    Array.prototype.push.apply(emptyCells, activePuzzle.emptyCells);
-    sortedDice=activePuzzle.dice.map(faces=>[...faces].sort());
-
-    // Compute solution index per die
-    const solvedGrid={};
-    activePuzzle.prefilled.forEach(p=>{solvedGrid[`${p.r},${p.c}`]=p.ch;});
-    const H1=activePuzzle.intendedSolution.H1.split(''), H2=activePuzzle.intendedSolution.H2.split(''),
-          V1=activePuzzle.intendedSolution.V1.split(''), V2=activePuzzle.intendedSolution.V2.split('');
-    for(let c=1;c<=5;c++){solvedGrid[`2,${c}`]=H1[c-1];solvedGrid[`4,${c}`]=H2[c-1];}
-    for(let r=1;r<=5;r++){solvedGrid[`${r},2`]=V1[r-1];solvedGrid[`${r},4`]=V2[r-1];}
-    puzzleSolutionIndex=sortedDice.map((sortedFaces,idx)=>{
-      const cell=emptyCells[idx];
-      const requiredLetter=solvedGrid[`${cell.r},${cell.c}`];
-      return sortedFaces.indexOf(requiredLetter);
-    });
-
-    // Date label
-    const dateObj=new Date(gameDate+'T12:00:00');
-    const dateStr=dateObj.toLocaleDateString(undefined,{month:'short',day:'numeric',year:'numeric'});
-    dateLabelEl.textContent=`Daily Puzzle · ${dateStr}`;
-
-    // Restore or start fresh
-    if(loadGame()){
-      document.getElementById('splashPage').classList.add('hidden');
-      document.getElementById('gamePage').classList.remove('hidden');
-      initFacesSelector();updateFacesSelector();renderGrid();renderDicePanel();
-    }else{
-      splashInitDiceState();splashRenderGrid();splashRenderDicePanel();splashRenderDifficultyButtons();
-    }
-  }catch(err){
-    console.error('Failed to load daily puzzles',err);
-    alert('Unable to load today’s puzzle.');
-    splashInitDiceState();splashRenderGrid();splashRenderDicePanel();splashRenderDifficultyButtons();
-  }
-}
-
-// Start
-initDailyPuzzle();
+let activePuzzle=null,activePuzzleId=null,gameDate=null,emptyCells=[],sortedDice=[],solutionLettersByDie=[];
+let splashFacesPerDie=3,splashDiceState=[],splashSelectedDieIndex=null,splashLongPressTimer=null,splashCurrentDieForLongPress=null;
+let facesPerDie=6,maxFacesPerDie=null,diceState=[],selectedDieIndex=null,dieOrder=[],longPressTimer=null,currentDieForLongPress=null;
+const splashEmptyCells=[{r:0,c:0}],splashPrefilledCells=[{r:0,c:1,ch:'L'},{r:0,c:2,ch:'A'},{r:0,c:3,ch:'Y'}];
+const sampleGrid=document.getElementById('sampleGrid'),dicePanel=document.getElementById('dicePanel'),difficultyButtonsEl=document.getElementById('difficultyButtons'),facesInfoEl=document.getElementById('facesInfo'),startBtn=document.getElementById('startBtn'),statsBtn=document.getElementById('statsBtn');
+const gridEl=document.getElementById('grid'),gameDicePanel=document.getElementById('gameDicePanel'),facesSelectEl=document.getElementById('facesSelect'),checkBtn=document.getElementById('checkBtn'),resetBtn=document.getElementById('resetBtn'),feedbackEl=document.getElementById('feedback'),saveIndicator=document.getElementById('saveIndicator'),dateLabel=document.getElementById('dateLabel');
+const modalOverlay=document.getElementById('modalOverlay'),modalFaces=document.getElementById('modalFaces'),modalClose=document.getElementById('modalClose');
+function getEasternDate(){const now=new Date(),et=new Date(now.toLocaleString('en-US',{timeZone:'America/New_York'}));return `${et.getFullYear()}-${String(et.getMonth()+1).padStart(2,'0')}-${String(et.getDate()).padStart(2,'0')}`;}
+function showSaveIndicator(){saveIndicator.classList.add('visible');setTimeout(()=>saveIndicator.classList.remove('visible'),2000)}
+function saveGame(){localStorage.setItem(SAVE_KEY,JSON.stringify({facesPerDie,maxFacesPerDie,diceState,dieOrder,gameDate:getEasternDate(),puzzleId:activePuzzleId,timestamp:new Date().toISOString()}));showSaveIndicator()}
+function loadGame(){const raw=localStorage.getItem(SAVE_KEY);if(!raw)return false;try{const s=JSON.parse(raw);if(s.gameDate!==getEasternDate()||s.puzzleId!==activePuzzleId){localStorage.removeItem(SAVE_KEY);return false}if(!Array.isArray(s.diceState)||!Array.isArray(s.dieOrder)||s.diceState.length!==sortedDice.length){localStorage.removeItem(SAVE_KEY);return false}facesPerDie=s.facesPerDie||6;maxFacesPerDie=s.maxFacesPerDie??facesPerDie;diceState=s.diceState;dieOrder=s.dieOrder;selectedDieIndex=null;return true}catch(e){localStorage.removeItem(SAVE_KEY);return false}}
+function clearSavedGame(){localStorage.removeItem(SAVE_KEY)}
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}}
+function splashVisible(){const indices=[2];for(let i=0;i<6&&indices.length<splashFacesPerDie;i++)if(i!==2&&!indices.includes(i))indices.push(i);return indices.sort((a,b)=>a-b)}
+function splashInit(){splashDiceState=[{location:'tray',cellIndex:null,faceIndex:0}];splashSelectedDieIndex=null}
+function splashDieHandlers(el,idx){el.addEventListener('click',e=>{e.stopPropagation();if(splashSelectedDieIndex===idx){const a=splashVisible();splashDiceState[idx].faceIndex=(splashDiceState[idx].faceIndex+1)%a.length}else splashSelectedDieIndex=idx;splashRender()});el.addEventListener('contextmenu',e=>e.preventDefault());let timer;const start=e=>{e.preventDefault();timer=setTimeout(()=>{splashOpenFace(idx);timer=null},LONGPRESS_DELAY)},end=e=>{e.preventDefault();if(timer){clearTimeout(timer);timer=null}};el.addEventListener('touchstart',start,{passive:false});el.addEventListener('touchend',end,{passive:false});el.addEventListener('mousedown',start);el.addEventListener('mouseup',end);el.addEventListener('mouseleave',end)}
+function splashRender(){sampleGrid.innerHTML='';dicePanel.innerHTML='';const a=splashVisible();for(let c=0;c<4;c++){const cell=document.createElement('div');cell.className='cell';const p=splashPrefilledCells.find(x=>x.c===c);if(p){cell.classList.add('prefilled');cell.textContent=p.ch}else{cell.classList.add('empty');cell.onclick=()=>{if(splashSelectedDieIndex!==null){splashDiceState[splashSelectedDieIndex].location='grid';splashDiceState[splashSelectedDieIndex].cellIndex=0;splashSelectedDieIndex=null;splashRender()}}}if(splashDiceState[0].location==='grid'&&c===0){const d=document.createElement('div');d.className='die';d.textContent=['B','D','P','Q','X','Y'][a[splashDiceState[0].faceIndex]];splashDieHandlers(d,0);cell.appendChild(d)}sampleGrid.appendChild(cell)}splashDiceState.forEach((s,i)=>{if(s.location==='tray'){const d=document.createElement('div');d.className='die';if(splashSelectedDieIndex===i)d.classList.add('selected');d.textContent=['B','D','P','Q','X','Y'][a[s.faceIndex]];splashDieHandlers(d,i);dicePanel.appendChild(d)}})}
+function splashOpenFace(idx){modalFaces.innerHTML='';const a=splashVisible(),letters=['B','D','P','Q','X','Y'];a.forEach((actual,i)=>{const b=document.createElement('button');b.className='modal-face-btn';b.textContent=letters[actual];b.onclick=()=>{splashDiceState[idx].faceIndex=i;modalOverlay.style.display='none';splashRender()};modalFaces.appendChild(b)});modalOverlay.style.display='flex'}
+function renderDifficulty(){difficultyButtonsEl.innerHTML='';[['Learning',1],['Easy',2],['Regular',3],['Hard',4],['Pro',5],['Extreme',6]].forEach(([name,n],i)=>{const b=document.createElement('button');b.textContent=name;if(n===3)b.classList.add('active');b.onclick=()=>{document.querySelectorAll('.difficulty-buttons button').forEach(x=>x.classList.remove('active'));b.classList.add('active');splashFacesPerDie=n;facesInfoEl.textContent=`Each die has ${n} possible value${n===1?'':'s'}.`;splashInit();splashRender()};difficultyButtonsEl.appendChild(b)});facesInfoEl.textContent='Each die has 3 possible values.'}
+function requiredLetters(){const g={};activePuzzle.prefilled.forEach(p=>g[`${p.r},${p.c}`]=p.ch);const s=activePuzzle.intendedSolution;for(let c=1;c<=5;c++){g[`2,${c}`]=s.H1[c-1];g[`4,${c}`]=s.H2[c-1]}for(let r=1;r<=5;r++){g[`${r},2`]=s.V1[r-1];g[`${r},4`]=s.V2[r-1]}return emptyCells.map(p=>g[`${p.r},${p.c}`])}
+function visibleIndices(idx){const n=facesPerDie,faces=sortedDice[idx],required=faces.indexOf(solutionLettersByDie[idx]);if(n>=faces.length)return faces.map((_,i)=>i);const out=[];for(let i=0;i<faces.length&&out.length<n;i++)if(i===required||out.length<n-1)out.push(i);return [...new Set(out)].sort((a,b)=>faces[a].localeCompare(faces[b]))}
+function initDice(){diceState=sortedDice.map(()=>({location:'tray',cellIndex:null,faceIndex:0}));dieOrder=sortedDice.map((_,i)=>i);shuffle(dieOrder);selectedDieIndex=null}
+function dieHandlers(el,idx){el.addEventListener('click',e=>{e.stopPropagation();if(selectedDieIndex===idx){const a=visibleIndices(idx);diceState[idx].faceIndex=(diceState[idx].faceIndex+1)%a.length;saveGame()}else selectedDieIndex=idx;renderGame()});el.addEventListener('contextmenu',e=>e.preventDefault());let timer;const start=e=>{e.preventDefault();timer=setTimeout(()=>{openFace(idx);timer=null},LONGPRESS_DELAY)},end=e=>{e.preventDefault();if(timer){clearTimeout(timer);timer=null}};el.addEventListener('touchstart',start,{passive:false});el.addEventListener('touchend',end,{passive:false});el.addEventListener('mousedown',start);el.addEventListener('mouseup',end);el.addEventListener('mouseleave',end)}
+function renderGrid(){gridEl.innerHTML='';const placed={};diceState.forEach((s,i)=>{if(s.location==='grid')placed[s.cellIndex]=i});const em={};emptyCells.forEach((p,i)=>em[`${p.r},${p.c}`]=i);const pre={};activePuzzle.prefilled.forEach(p=>pre[`${p.r},${p.c}`]=p.ch);for(let r=1;r<=5;r++)for(let c=1;c<=5;c++){const cell=document.createElement('div');cell.className='cell';const key=`${r},${c}`;if(pre[key]){cell.classList.add('prefilled');cell.textContent=pre[key]}else if(em[key]!==undefined){cell.classList.add('empty');const ci=em[key],di=placed[ci];if(di!==undefined){const d=document.createElement('div');d.className='die';if(selectedDieIndex===di)d.classList.add('selected');d.textContent=sortedDice[di][visibleIndices(di)[diceState[di].faceIndex]];dieHandlers(d,di);cell.appendChild(d)}cell.onclick=e=>{e.stopPropagation();if(selectedDieIndex!==null){diceState[selectedDieIndex].location='grid';diceState[selectedDieIndex].cellIndex=ci;selectedDieIndex=null;renderGame();saveGame()}}}else cell.classList.add('disabled');gridEl.appendChild(cell)}}
+function renderTray(){gameDicePanel.innerHTML='';dieOrder.forEach(i=>{if(diceState[i].location==='grid')return;const d=document.createElement('div');d.className='die';if(selectedDieIndex===i)d.classList.add('selected');d.textContent=sortedDice[i][visibleIndices(i)[diceState[i].faceIndex]];dieHandlers(d,i);gameDicePanel.appendChild(d)})}
+function renderGame(){renderGrid();renderTray()}
+function openFace(idx){modalFaces.innerHTML='';visibleIndices(idx).forEach((actual,i)=>{const b=document.createElement('button');b.className='modal-face-btn';b.textContent=sortedDice[idx][actual];b.onclick=()=>{diceState[idx].faceIndex=i;modalOverlay.style.display='none';renderGame();saveGame()};modalFaces.appendChild(b)});modalOverlay.style.display='flex'}
+function facesSelector(){facesSelectEl.innerHTML='';for(let n=1;n<=6;n++){const b=document.createElement('button');b.textContent=n;if(n===facesPerDie)b.classList.add('active');if(n>maxFacesPerDie){b.classList.add('disabled');b.onclick=()=>alert(`Difficulty is locked at ${difficultyNames[maxFacesPerDie]} or lower.`)}else b.onclick=()=>{if(n>facesPerDie)return;facesPerDie=n;if(n<maxFacesPerDie)maxFacesPerDie=n;renderGame();facesSelector();saveGame()};facesSelectEl.appendChild(b)}}
+function words(){const g={};activePuzzle.prefilled.forEach(p=>g[`${p.r},${p.c}`]=p.ch);diceState.forEach((s,i)=>{if(s.location==='grid'){const p=emptyCells[s.cellIndex];g[`${p.r},${p.c}`]=sortedDice[i][visibleIndices(i)[s.faceIndex]]}});return{H1:[1,2,3,4,5].map(c=>g[`2,${c}`]||'').join(''),H2:[1,2,3,4,5].map(c=>g[`4,${c}`]||'').join(''),V1:[1,2,3,4,5].map(r=>g[`${r},2`]||'').join(''),V2:[1,2,3,4,5].map(r=>g[`${r},4`]||'').join('')}}
+function check(){const got=words(),sol=activePuzzle.intendedSolution;feedbackEl.innerHTML='';let ok=true;Object.keys(sol).forEach(k=>{const d=document.createElement('div');d.className='feedback-item '+(got[k]===sol[k]?'correct':'invalid');d.textContent=`${k}: ${got[k]||'(incomplete)'}`;feedbackEl.appendChild(d);if(got[k]!==sol[k])ok=false});if(ok){const d=document.createElement('div');d.style.marginTop='10px';d.style.color='#2e7d32';d.style.fontWeight='bold';d.textContent=`Congratulations! You solved Cross Dice at ${difficultyNames[facesPerDie]} difficulty for ${gameDate}!`;feedbackEl.appendChild(d);clearSavedGame()}}
+function reset(){initDice();feedbackEl.innerHTML='';renderGame();saveGame()}
+startBtn.onclick=()=>{const b=document.querySelector('.difficulty-buttons button.active');const map={Learning:1,Easy:2,Regular:3,Hard:4,Pro:5,Extreme:6};facesPerDie=map[b?.textContent]||3;maxFacesPerDie=facesPerDie;document.getElementById('splashPage').classList.add('hidden');document.getElementById('gamePage').classList.remove('hidden');facesSelector();initDice();renderGame();saveGame()};statsBtn.onclick=()=>alert('Stats screen coming soon!');checkBtn.onclick=check;resetBtn.onclick=reset;modalClose.onclick=()=>modalOverlay.style.display='none';
+async function init(){try{const catalog=await (await fetch('dailyPuzzles_30days_good.json')).json();const today=getEasternDate();activePuzzle=catalog[today];if(!activePuzzle)throw new Error('No puzzle for today');activePuzzleId=activePuzzle.id;gameDate=activePuzzle.date;emptyCells=activePuzzle.emptyCells;sortedDice=activePuzzle.dice.map(d=>[...d].sort());solutionLettersByDie=requiredLetters();dateLabel.textContent=`Daily Puzzle · ${gameDate}`;if(loadGame()){document.getElementById('splashPage').classList.add('hidden');document.getElementById('gamePage').classList.remove('hidden');facesSelector();renderGame()}else{splashInit();splashRender();renderDifficulty()}}catch(e){console.error(e);alert('Unable to load today’s puzzle.')}}
+init();
 </script>
 </body>
 </html>
